@@ -6,12 +6,25 @@
 //   - an existing tab whose headers differ is reported, never "fixed";
 //   - by default it only reports what it WOULD do (a dry run).
 import type { ContractorSheet } from "./contractor-store";
+import { BID_TABLE } from "./bid";
+import { BID_INVITE_TABLE } from "./bid-invite";
 import { CONFIRMATION_TABLE } from "./confirmation";
+import { INVITE_TABLE } from "./invite";
+import { JOB_TABLE } from "./job";
 import { LANGUAGE_TABLE } from "./language-store";
+import { REVIEW_TABLE } from "./review";
 import { colLetter, type TableDef } from "./tables";
 
 // Tabs the app needs. Each later feature adds its own tab here when it ships.
-export const REQUIRED_TABLES: TableDef[] = [CONFIRMATION_TABLE, LANGUAGE_TABLE];
+export const REQUIRED_TABLES: TableDef[] = [
+  CONFIRMATION_TABLE,
+  LANGUAGE_TABLE,
+  JOB_TABLE,
+  INVITE_TABLE,
+  REVIEW_TABLE,
+  BID_TABLE,
+  BID_INVITE_TABLE,
+];
 
 export type TabState = "ok" | "missing" | "header_mismatch" | "created";
 export type TabPlan = { tab: string; state: TabState };

@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { requireAdmin } from "@/lib/admin-auth";
+import { fixturesEnabled } from "@/lib/fixtures";
 import { getRecordType } from "@/lib/google-sheets";
 import { logout } from "./login/actions";
 
@@ -20,6 +21,15 @@ export default async function AdminShell({
           <Link href="/admin/requests" className="py-2 font-medium text-blue-800 underline">
             Requests
           </Link>
+          <Link href="/admin/reviews" className="py-2 font-medium text-blue-800 underline">
+            Jobs &amp; reviews
+          </Link>
+          <Link href="/admin/builder" className="py-2 font-medium text-blue-800 underline">
+            Builder demo
+          </Link>
+          <Link href="/admin/telegram" className="py-2 font-medium text-blue-800 underline">
+            Telegram (demo)
+          </Link>
           <Link href="/admin/dashboard" className="py-2 font-medium text-blue-800 underline">
             Dashboard
           </Link>
@@ -30,6 +40,14 @@ export default async function AdminShell({
           </button>
         </form>
       </div>
+
+      {fixturesEnabled() && (
+        <div role="note" className="mt-4 rounded-md border border-purple-400 bg-purple-100 p-3 text-sm font-medium text-purple-950">
+          FIXTURE MODE (live demo): made-up records plus anything entered during the demo, kept in this server&apos;s memory and,
+          with <code>npm run demo</code>, a local demo file. Nothing here is in your Google Sheet, and nothing you do here is saved
+          there.
+        </div>
+      )}
 
       {recordType === "TEST" ? (
         <div className="mt-4 rounded-md border border-amber-400 bg-amber-100 p-3 text-sm font-medium text-amber-950">

@@ -11,8 +11,8 @@ import { makeSheet } from "./helpers/fakes.mjs";
 
 const snapshot = (sheet) => JSON.stringify(sheet.tabs);
 
-test("the Confirmations and Languages tabs are required tabs", () => {
-  assert.deepEqual(REQUIRED_TABLES.map((t) => t.tab), ["Confirmations", "Languages"]);
+test("the newer tabs are the required tabs: Confirmations, Languages, Jobs, ReviewInvites, Reviews", () => {
+  assert.deepEqual(REQUIRED_TABLES.map((t) => t.tab), ["Confirmations", "Languages", "Jobs", "ReviewInvites", "Reviews", "Bids", "BidInvites"]);
 });
 
 test("dry run: reports a missing tab and changes nothing", async () => {
@@ -88,22 +88,21 @@ test("the real connection wrapper offers tab listing and adding only when the AP
   assert.equal(basic.addTab, undefined);
 });
 
-test("by default both required tabs are created, each with its own headers, and a second run does nothing", async () => {
+test("by default every required tab is created with its own headers, and a second run does nothing", async () => {
   const sheet = makeSheet({});
-  assert.deepEqual(await applySetup(sheet), [
-    { tab: "Confirmations", state: "created" },
-    { tab: "Languages", state: "created" },
-  ]);
+  const created = await applySetup(sheet);
+  assert.deepEqual(created, REQUIRED_TABLES.map((t) => ({ tab: t.tab, state: "created" })));
+  for (const t of REQUIRED_TABLES) assert.deepEqual(sheet.tabs[t.tab], [[...t.headers]], t.tab);
   assert.deepEqual(sheet.tabs.Languages, [[...LANGUAGE_TABLE.headers]]);
   const before = snapshot(sheet);
-  assert.deepEqual((await applySetup(sheet)).map((i) => i.state), ["ok", "ok"]);
+  assert.deepEqual((await applySetup(sheet)).map((i) => i.state), REQUIRED_TABLES.map(() => "ok"));
   assert.equal(snapshot(sheet), before);
 });
 
-test("only the missing tab is created when the other already exists", async () => {
+test("only the missing tabs are created when some already exist", async () => {
   const sheet = makeSheet({ tables: [CONFIRMATION_TABLE] });
-  assert.deepEqual(await applySetup(sheet), [
-    { tab: "Confirmations", state: "ok" },
-    { tab: "Languages", state: "created" },
-  ]);
+  const result = await applySetup(sheet);
+  assert.deepEqual(result[0], { tab: "Confirmations", state: "ok" });
+  assert.ok(result.slice(1).every((i) => i.state === "created"));
+  assert.equal(result.length, REQUIRED_TABLES.length);
 });

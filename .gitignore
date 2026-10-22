@@ -51,3 +51,6 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# local live-demo data (made-up records and Telegram demo links); never commit
+/.demo-data/

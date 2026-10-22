@@ -6,6 +6,9 @@ import {
 } from "@/lib/google-sheets";
 import { createRateLimiter, newId, reply, sameOrigin } from "@/lib/http";
 import { saveContractorLanguage } from "@/lib/language-store";
+import { fixturesEnabled } from "@/lib/fixtures";
+import { botUsername, telegramToken } from "@/lib/telegram";
+import { newPairingCode, pairingUrl } from "@/lib/telegram-pairing";
 import { DEFAULT_LANGUAGE, parseLanguage, type LanguageCode } from "@/lib/language";
 import { parseSubmission, todayInIndia, validate } from "@/lib/registration";
 
@@ -75,9 +78,21 @@ export async function POST(request: Request) {
         console.error("[contractors] language_not_saved");
       }
     }
-    // "saved" and "duplicate" look identical to the caller on purpose, so the
-    // form can never be used to find out who is already registered.
-    return reply({ ok: true, recordType }, 200);
+    // LIVE DEMO only (fixture mode, bot set up): offer the new contractor a
+    // one-time link to connect their own Telegram chat for job alerts.
+    let telegramConnectUrl: string | undefined;
+    if (outcome === "saved" && fixturesEnabled()) {
+      try {
+        const token = telegramToken();
+        const username = token ? await botUsername(token) : null;
+        if (username) telegramConnectUrl = pairingUrl(username, newPairingCode(id).code);
+      } catch {
+        console.error("[contractors] telegram_link_failed");
+      }
+    }
+    // Otherwise "saved" and "duplicate" look identical to the caller on purpose,
+    // so the form can never be used to find out who is already registered.
+    return reply({ ok: true, recordType, ...(telegramConnectUrl ? { telegramConnectUrl } : {}) }, 200);
   } catch (error) {
     // Log a short label only. Error objects can contain request details.
     const label =

@@ -138,6 +138,7 @@ test("every validation message the app can show is translated into Hindi and Mar
   const english = [
     ...messagesIn("../lib/registration.ts", SUB),
     ...messagesIn("../lib/request.ts", SUB),
+    ...messagesIn("../lib/review.ts", { COMMENT_MAX: 600 }),
     ...messagesIn("../app/request/RequestForm.tsx", SUB).filter((s) => !s.includes("${")),
   ];
   assert.ok(english.length >= 20, `only found ${english.length} messages: the scan is broken`);

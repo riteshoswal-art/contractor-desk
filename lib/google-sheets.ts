@@ -3,6 +3,7 @@
 import { auth, sheets } from "@googleapis/sheets";
 import type { sheets_v4 } from "@googleapis/sheets";
 import type { ContractorSheet } from "./contractor-store";
+import { fixtureSheet, fixturesEnabled } from "./fixtures";
 import type { RecordType } from "./registration";
 
 // The Sheet cannot be used. `reason` is a short, stable label that is safe to
@@ -266,6 +267,9 @@ const LOGGED_REASONS: Record<string, string> = {
 
 export function getContractorSheet(): ContractorSheet {
   if (cached) return cached;
+  // Local fixture mode (see lib/fixtures.ts): an in-memory Sheet of made-up
+  // records. It cannot switch on in production, on Vercel, or for REAL data.
+  if (fixturesEnabled()) return fixtureSheet();
 
   let settings: AuthSettings;
   try {

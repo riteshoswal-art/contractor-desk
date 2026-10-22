@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { ratingText, type ReviewSummary } from "@/lib/review";
 import {
   CONFIRMATION_LABELS,
   NOT_CONFIRMED_TEXT,
@@ -28,6 +29,9 @@ export type CandidateExtras = {
     state: ConfirmedStart;
     history: Confirmation[];
   };
+  // Present only when ratings can be read. `summary: null` means no valid review
+  // yet ("Not yet rated"); an absent `rating` means ratings are not available at all.
+  rating?: { summary: ReviewSummary | null };
   slot?: React.ReactNode; // forms and bid information supplied by the page
 };
 
@@ -190,6 +194,13 @@ export default function MatchResults({
 
                 {extras?.[c.contractorId]?.confirmation && (
                   <ConfirmationStatus info={extras[c.contractorId].confirmation!} />
+                )}
+
+                {extras?.[c.contractorId]?.rating && (
+                  <p className="mt-2 text-sm">
+                    <span className="font-medium">Reviews:</span>{" "}
+                    {ratingText(extras[c.contractorId].rating!.summary ?? undefined)}
+                  </p>
                 )}
 
                 <h4 className="mt-3 text-sm font-semibold">Why this match</h4>

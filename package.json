@@ -8,6 +8,8 @@
     "start": "next start",
     "lint": "eslint",
     "sheet:setup": "node --import ./tests/register.mjs scripts/setup-sheet.mjs",
+    "demo": "node scripts/demo.mjs",
+    "demo:reset": "node scripts/demo-reset.mjs",
     "test": "node --import ./tests/register.mjs --test \"tests/**/*.test.mjs\""
   },
   "dependencies": {

@@ -144,7 +144,8 @@ npm run sheet:setup -- --apply  # create the missing tabs and their header rows
 
 The setup only **creates** missing tabs. It never edits, clears or deletes an
 existing tab, and it reports (without changing) any existing tab whose headers
-differ. Tabs defined so far: `Confirmations` and `Languages`.
+differ. Tabs defined so far: `Confirmations`, `Languages`, `Jobs`,
+`ReviewInvites`, `Reviews`, `Bids` and `BidInvites`.
 
 ## Using it for the experiment
 
@@ -255,6 +256,257 @@ example "Hinglish") are not assumed to be English either, so they also stay
 pending. Messages to contractors are not translated yet (WhatsApp is a later
 phase).
 
+## Jobs, completion and reviews
+
+**Recording the job.** Open a request, then use **Job and review**. When the
+developer tells you whom they chose, record that contractor. Then mark the job
+**completed** (the completion date is optional) or **cancelled** (a reason is
+required). All of it is admin-only.
+
+- The contractor must be associated with the request (a current potential match,
+  or someone you already have a confirmation or contact outcome for).
+- A contractor who said **unavailable**, or whose start date still **needs
+  confirmation** (a near-date match), cannot be recorded until a start date has
+  been confirmed for this request.
+- Only one contractor per request. Changing the contractor is allowed only while
+  the job is in progress and needs a reason.
+- Nothing is overwritten. Every change is a new row in the **Jobs** tab, and a
+  final outcome can only be changed by an explicit **correction** with a reason.
+  The page shows the full history.
+
+**Who may review, and how it is authorised.** Developers have no accounts, so a
+review needs a private link that you create **after** the job is completed
+(button: "Create review invitation link").
+
+- The link carries a random 256-bit token. The Sheet stores only a SHA-256
+  **digest**, never the token, so reading the Sheet does not give anyone a usable
+  link. The raw link is shown to you **once**; the app does **not** send it (you
+  pass it to the developer yourself, and the app never claims it was delivered).
+- The token belongs to one job. The contractor reviewed is read from the stored
+  job, never from the form, so a link cannot be pointed at another contractor or
+  job.
+- It works **once** and expires after **14 days**. A newer invitation for the same
+  job replaces the older one. It stops working if the job is cancelled.
+- The review page (`/review/<token>`) shows only the trade, locality and dates,
+  never the contractor's name or any phone number.
+- Scores: overall 1 to 5 (required); workmanship, punctuality and communication
+  1 to 5 (optional); written feedback up to 600 characters (no phone numbers).
+  The page works in English, Hindi and Marathi. Hindi/Marathi feedback is stored
+  exactly as written; an English version is added only if a real translation
+  provider produces one (none is connected, so it is marked pending). Feedback is
+  never sent to Gemini or any AI service.
+- Server checks on every submission: valid token, active invitation, completed
+  job, valid scores, and **one review per job** (repeat clicks, retries and two
+  servers writing at once still leave one review).
+
+**How ratings are calculated.** A contractor's rating is the plain average of the
+overall scores of their **valid** reviews, rounded to one decimal (half rounds
+up), always shown with the number of reviews. A review counts only if its job is
+completed now, names that contractor, and is the first review for the job (a job
+later corrected to cancelled stops counting). Each optional category is averaged
+over only the reviews that scored it; a missing score is never treated as zero.
+There is no "Excellent"/"Poor" label: no reviews shows **Not yet rated**, one or
+two show **(too few to judge)**, and three or more show the average and count.
+
+**Where to see it.** The request page shows the job, its invitation and review.
+**Jobs & reviews** in the admin menu lists every job, which completed jobs still
+need an invitation, each review, and contractor ratings.
+
+**Google Sheet needs.** Three new tabs, created by `npm run sheet:setup --
+--apply` (nothing existing is changed): `Jobs`, `ReviewInvites` and `Reviews`. The
+existing `Outcomes` tab is not used for this: it is one editable row per
+request-and-contractor contact attempt with fixed columns, so it cannot hold a
+chosen contractor, a completion date, an audit trail or reviews. Until the tabs
+exist the pages keep working and say which tab is missing.
+
+**Trying the screens without your real Sheet.** Run the development server with
+fixture mode: it uses an in-memory Sheet of made-up records, shows a purple
+FIXTURE MODE banner, and forgets everything when stopped. It cannot switch on in a
+production build, on Vercel, or for REAL data.
+
+```bash
+$env:CONTRACTOR_DESK_FIXTURES = "1"; npm run dev
+```
+
+**Contact details for the developer (after selection only).** Once a contractor
+is recorded on the job (directly or by choosing a bid), the **Job and review** box
+has **Show contact details**. It shows that one contractor's name and number to
+you, so you can pass them on by hand. It works only for the contractor on this
+job, never for other bidders, and not for a cancelled job. Each viewing is
+recorded as a `contact_shared` row in the `Jobs` tab (the number itself is never
+written there). The number is read only for a REAL record on a server set up for
+real data; for TEST records it is not read or shown. Nothing is sent. Before
+selection, the only contact step is the existing "Prepare a message" step, where
+you contact candidates yourself to ask about availability.
+
+**Not live yet.** No invitation is sent automatically (WhatsApp is a later
+phase) and there is no review moderation (the `status` column is reserved).
+Reviews are shown next to each bid (see the next section) but never used to
+rank contractors automatically.
+
+## Contractor bidding
+
+Bidding lets several potential matches send a price for one request, so the
+founder can compare them and record the developer's choice. Everything below
+works **locally and in fixture mode**. It needs the **`Bids`** and
+**`BidInvites`** tabs in the real Sheet (`npm run sheet:setup -- --apply`, which
+has **not** been run). Until they exist, the request page says bidding is not set
+up, a contractor's bid link says it cannot be used, and nothing is saved.
+
+**The flow (all on a request's page, under "Contractor bids").**
+
+1. **Open bidding** (optionally with a closing date; it stays open until the end
+   of that day, India time). Bidding can be closed, cancelled, and reopened only
+   with a written reason.
+2. **Create a private bid link** for a potential match. Only a *current*
+   potential match (trade and locality) can be invited, and not someone who said
+   *unavailable* for this request. The app does **not** send the link: you pass
+   it on yourself, and the page shows it only once.
+3. The contractor opens the link (in their preferred language when known) and
+   sends a **price**, a **rate unit** and optional notes. They see only the job's
+   trade, locality, start date and duration: no developer name or phone number,
+   and nothing about other bidders.
+4. You compare the bids and **select** one. The choice is recorded through the
+   same job code as before, so completion and reviews work unchanged.
+
+**One bid per contractor per request.** Enforced on the server and in the data
+(the first valid "submitted" row for a contractor and request is the bid; later
+ones are ignored), not by hiding a button. Repeated clicks, refreshes, retries and
+simultaneous submissions give exactly one bid. A bid is never silently replaced.
+If a correction is needed, use **Correct or withdraw this bid** (admin only):
+it changes that same bid, needs a reason, and the earlier values stay in the
+history. A withdrawn bid does not let the contractor bid again. Corrections stop
+once a contractor is selected.
+
+**Bid links.** One contractor, one request, 256-bit random, stored only as a
+SHA-256 digest in the `BidInvites` tab (so a bid link and a review link can never
+be swapped), valid for 14 days, replaced when you make a newer one, used up by the
+bid, and refused once bidding is closed. The contractor and request always come
+from the stored link, never from the form.
+
+**Prices and units.** Units are a fixed list: per square foot, per square metre,
+per day, per unit, and a fixed price for the defined scope. The amount must be
+more than zero, at most 2 decimal places, and below a sensible limit per unit;
+notes are at most 500 characters and may not contain phone numbers. Currency is
+INR. The comparison **groups bids by unit** and only orders bids inside a group
+(cheapest first). It never compares different units, never picks a "cheapest
+overall" and never estimates a total cost (no quantities are collected).
+
+**Availability.** A bid never confirms a start date. A near-date contractor can
+send a *provisional* bid (the form says so), but it shows as "Provisional: start
+date not confirmed yet" and **cannot be selected** until you record a
+confirmation for this request on their card, exactly as for the Phase 4 job
+rules. Bidding does not change the contractor's own availability.
+
+**Reviews.** Each bid shows the contractor's real review count and average, or
+"Not yet rated", with workmanship, punctuality and communication averages only
+where reviews exist, and the "too few to judge" note below three reviews. Under
+the scores it also shows the contractor's **latest three written comments** from
+valid reviews (newest first, exactly as written, with the language named). An
+English version appears only if a translation provider really produced one;
+otherwise it says "English version pending".
+
+**Privacy.** The comparison data is built from names and IDs only: it is never
+given phone numbers or link tokens. Phone numbers stay behind the existing
+contact steps on a contractor's card.
+
+**Choosing a bidder across two tabs.** Google Sheets has no cross-tab
+transaction. Selection writes the `Jobs` row first (the one source of truth for
+who was chosen), then a "selected" audit row in `Bids` that records which bid it
+was. If the second write fails, the job is still correct, and pressing the same
+button again finishes the record without creating a second job. If you later
+change the contractor to another bidder (or record a bidder in the "Job and
+review" box), the Bids tab also records that bidder's bid as chosen, so the
+audit trail follows the job: it can read A, then B, then A again, and the latest
+one matches the job. A contractor
+recorded directly in the Phase 4 "Job and review" box (without bidding) is still
+allowed; once any contractor is recorded, bidding cannot be opened or changed.
+
+**Not built.** Production messaging (only the Telegram live demo below exists;
+WhatsApp is not used), contractor accounts, a
+developer-facing comparison page, automatic ranking, total-cost estimates, and
+translation of notes (they are kept in the language written and labelled so).
+
+## Live demo: builder ticket, contractor Telegram alerts, live bids
+
+**Start it:**
+
+```bash
+npm run demo
+```
+
+It prints the addresses to use: `http://localhost:3100/admin/builder` on the
+laptop, and `http://<laptop address>:3100/register` for phones on the same
+Wi-Fi. Stop it with Ctrl+C. `npm run demo:reset` deletes the saved demo data.
+
+**What demo mode is.** Fixture mode: an in-memory spreadsheet with three made-up
+contractors and one made-up request, plus anything entered during the demo.
+Admin pages show FIXTURE MODE and TEST banners. It is saved after every change to
+`.demo-data/fixture-state.json` (ignored by Git) so a rehearsal survives a
+restart. Your Google Sheet is never read or written. It refuses to switch on in a
+production build, on Vercel, or with REAL data. Registrations stored in the live
+Sheet do **not** appear here: participants register again on the demo server.
+
+**The flow.**
+
+1. **Builder Demo** (admin menu): raise a job ticket (trade, Pune locality, work
+   description, start date, duration, notes). You get a reference such as
+   `R-AB12CD34`. There are no builder accounts: the founder raises it on the
+   builder's behalf.
+2. The ticket shows the **matched contractors**, why each matches, their start
+   date status (a start up to 2 days later says "needs confirmation"), and
+   whether they connected Telegram.
+3. **Send job to matched contractors** opens bidding (if needed) and sends each
+   *connected* contractor ONE private Telegram message with only their own
+   one-time bid link. Results: Sent, Not connected, Preview only, Failed,
+   Skipped. Only "Sent" means Telegram accepted it.
+4. The contractor opens their link and submits one bid (the normal bid form and
+   rules). Their confirmation appears on the form.
+5. For each **newly saved** bid, the builder's Telegram chat
+   (`TELEGRAM_DEMO_CHAT_ID`) gets an alert: ticket, contractor, quote and unit,
+   provisional status, time, and a link to the ticket. Duplicates, rejected bids
+   and page refreshes do not alert. If the alert fails the bid is still saved,
+   and the ticket shows the failure.
+6. The ticket view checks for new bids every 4 seconds (it only reads), shows the
+   bid count and alert status, and includes the full comparison (units kept
+   apart), selection, contact details after selection, completion and review.
+
+**Connecting a contractor's Telegram (pairing).** A bot can only message someone
+who pressed Start in it. After registering on the demo server, the contractor
+sees **Connect Telegram**; it opens `t.me/<your bot>?start=<one-time code>`. They
+press **Start**. On the ticket, press **Check for new connections** (sending a
+job also checks first). The code works once, for 30 minutes, and links that
+private chat to that contractor ID only. For a contractor registered earlier,
+use **Create Telegram connect link** on the ticket and give it to them.
+Connections are stored only in the demo data, never in the Sheet.
+
+**Telegram setup (one time, about 10 minutes).**
+
+1. In Telegram, open **@BotFather** (blue tick), send `/newbot`, choose a name
+   and a username ending in `bot`. Copy the **token**. Treat it like a password.
+2. On the builder's phone (yours), open the bot and press **Start**.
+3. In `.env.local` add a line `TELEGRAM_BOT_TOKEN=` followed by the token. Save.
+   Stop the demo (Ctrl+C) and run `npm run demo` again.
+4. Log in, open **Telegram (demo)**, press **Find my chat ID**, and add
+   `TELEGRAM_DEMO_CHAT_ID=` followed by your number. Save and restart again.
+5. Press **Send a test message** and check your phone.
+
+**Phones and Wi-Fi.** Phones must be on the same Wi-Fi as the laptop and use the
+`http://<laptop address>:3100` address printed by `npm run demo` (localhost only
+works on the laptop). The first time, Windows may ask whether Node.js may use the
+network: allow it on **private** networks. Guest or office Wi-Fi often blocks
+devices from reaching each other; a phone hotspot from the laptop or one phone
+usually works. Demo mode allows only this laptop's own addresses for the
+development scripts.
+
+**Contact details in demo mode.** After a contractor is selected, "Show contact
+details" shows that contractor's number and records the viewing in the job
+history. Only in demo mode; TEST rows in the real Sheet stay hidden.
+
+**Personal data.** If friends register with their real names and numbers, those
+are kept in `.demo-data/fixture-state.json` on this laptop. Run
+`npm run demo:reset` after the presentation to delete them.
+
 ## Manual procedures (no screens for these yet)
 
 - **Delete a contractor / honour a deletion request:** put the date in
@@ -345,6 +597,14 @@ fix, and is a new service to approve.
   records before any real person is involved.
 
 ## Limitations and unfinished work
+
+- **Bidding is only tested with pretend and in-memory Sheets.** The `Bids` and
+  `BidInvites` tabs do not exist in the real Sheet yet. The in-process lock that
+  stops simultaneous submissions covers one server; with several servers the
+  "first row wins" rule keeps the result correct, but a losing submission can
+  leave an ignored duplicate row in the `Bids` tab.
+- Bid links, like review links, are only shown on screen: delivery is manual and
+  nothing confirms that a contractor received one.
 
 - **Never tested against real Google or Gemini.** All Sheet and Gemini behaviour
   was tested with simulated services. Real model drafts may be rejected more or

@@ -5,3 +5,8 @@ export function redirect(url) {
   error.redirectUrl = url;
   throw error;
 }
+
+// Enough of the client router for server-side rendering tests of client components.
+export function useRouter() {
+  return { refresh() {}, push() {}, replace() {}, back() {}, prefetch() {} };
+}

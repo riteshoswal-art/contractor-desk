@@ -19,9 +19,15 @@ import { latestLanguageByEntity, loadLanguageRecords, type LanguageRecord } from
 import { languageName } from "@/lib/language";
 import { formatDate, matchContractors } from "@/lib/match";
 import { loadContractors, loadRequests } from "@/lib/records";
+import { todayInIndia } from "@/lib/registration";
+import { telegramConfig } from "@/lib/telegram";
 import AdminShell from "../../AdminShell";
 import MatchResults, { type CandidateExtras } from "../MatchResults";
 import ConfirmationForm from "./ConfirmationForm";
+import BidPanel from "./BidPanel";
+import JobPanel from "./JobPanel";
+import { loadBidWorkspace, type BidWorkspace } from "./bid-data";
+import { loadJobWorkspace, type JobWorkspace } from "./job-data";
 
 export const metadata: Metadata = { title: "Request | Contractor Desk" };
 
@@ -81,6 +87,8 @@ async function RequestDetail({
   let confirmations: Confirmation[] = [];
   let confirmationsReady = true;
   let languageRecord: LanguageRecord | undefined;
+  let workspace: JobWorkspace | undefined;
+  let bidWorkspace: BidWorkspace | undefined;
   try {
     const sheet = getContractorSheet();
     const requests = await loadRequests(sheet);
@@ -105,6 +113,10 @@ async function RequestDetail({
         if (!(error instanceof SheetSetupError)) throw error;
         console.error("[admin/match] languages_tab_not_set_up");
       }
+      // The job, its review invitation and its review. Each of those tabs is optional.
+      workspace = await loadJobWorkspace(sheet, recordType, request, contractors, confirmations);
+      // Bidding has its own optional tabs (Bids, BidInvites). No phone numbers are loaded.
+      bidWorkspace = await loadBidWorkspace(sheet, recordType, request, contractors, confirmations, workspace.summaries);
     }
   } catch (error) {
     const label =
@@ -147,6 +159,7 @@ async function RequestDetail({
             history: historyOf(confirmations, request.id, c.contractorId),
           }
         : undefined,
+      rating: workspace?.summaries ? { summary: workspace.summaries.get(c.contractorId) ?? null } : undefined,
       slot: confirmationsReady ? (
         <ConfirmationForm
           requestId={request.id}
@@ -192,6 +205,23 @@ async function RequestDetail({
           &ldquo;One-time Sheet setup&rdquo;.
         </p>
       )}
+      {workspace && workspace.missingTabs.length > 0 && (
+        <p role="status" className="mt-6 rounded-md border border-amber-300 bg-amber-50 p-3 text-sm text-amber-950">
+          Not set up in the Sheet yet: {workspace.missingTabs.map((t) => `"${t}"`).join(", ")}. Recording the
+          chosen contractor, completion and reviews needs{" "}
+          {workspace.missingTabs.length === 1 ? "this tab" : "these tabs"}. Matching below still works. See the README,
+          section &ldquo;One-time Sheet setup&rdquo;.
+        </p>
+      )}
+      {bidWorkspace && bidWorkspace.missingTabs.length > 0 && (
+        <p role="status" className="mt-6 rounded-md border border-amber-300 bg-amber-50 p-3 text-sm text-amber-950">
+          Bidding is not set up in the Sheet yet. Missing: {bidWorkspace.missingTabs.map((t) => `"${t}"`).join(", ")}.
+          Nothing can be saved for bidding until {bidWorkspace.missingTabs.length === 1 ? "that tab exists" : "those tabs exist"}.
+          See the README, section &ldquo;One-time Sheet setup&rdquo;.
+        </p>
+      )}
+      {bidWorkspace?.panel && <BidPanel panel={bidWorkspace.panel} today={todayInIndia()} telegram={{ configured: telegramConfig().configured, testMode: recordType === "TEST" }} />}
+      {workspace?.panel && <JobPanel {...workspace.panel} />}
       <MatchResults result={result} request={request} extras={extras} />
     </>
   );

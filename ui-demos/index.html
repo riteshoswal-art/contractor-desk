@@ -1,0 +1,129 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>UI Concepts | Contractor Desk</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Inter+Tight:wght@600&family=Manrope:wght@700&display=swap" rel="stylesheet">
+  <style>
+    :root { --bg: #f2f2f0; --ink: #111; --muted: #6e6e73; --line: #e4e4e1; --card: #fff; }
+    *, *::before, *::after { box-sizing: border-box; }
+    body { margin: 0; background: var(--bg); color: var(--ink); font-family: -apple-system, BlinkMacSystemFont, "Inter", "Segoe UI", system-ui, sans-serif; -webkit-font-smoothing: antialiased; line-height: 1.5; }
+    main { max-width: 1120px; margin: 0 auto; padding: 56px 20px 80px; }
+    .eyebrow { font-size: .78rem; font-weight: 600; letter-spacing: .05em; text-transform: uppercase; color: var(--muted); }
+    h1 { font-size: clamp(2rem, 4.6vw, 3.2rem); line-height: 1.05; letter-spacing: -.03em; margin: 10px 0 14px; text-wrap: balance; }
+    .lead { font-size: 1.08rem; color: var(--muted); max-width: 680px; margin: 0; }
+    .grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; margin-top: 40px; }
+    @media (max-width: 900px) { .grid { grid-template-columns: minmax(0, 1fr); } }
+    a.concept { display: grid; gap: 14px; background: var(--card); border: 1px solid var(--line); border-radius: 24px; padding: 14px 14px 22px; text-decoration: none; color: inherit;
+      box-shadow: 0 1px 2px rgba(0,0,0,.04), 0 10px 30px -16px rgba(0,0,0,.14); transition: transform 120ms ease-out, box-shadow 200ms ease; }
+    a.concept:hover { box-shadow: 0 2px 4px rgba(0,0,0,.05), 0 24px 48px -20px rgba(0,0,0,.22); }
+    a.concept:active { transform: scale(.98); }
+    .swatch { height: 170px; border-radius: 16px; position: relative; overflow: hidden; display: grid; place-items: center; }
+    .swatch .mock { width: 78%; border-radius: 12px; padding: 12px; display: grid; gap: 8px; }
+    .bar { height: 8px; border-radius: 6px; }
+    .row { display: flex; gap: 6px; }
+    .body { padding: 0 8px; display: grid; gap: 8px; }
+    .name { font-size: 1.25rem; font-weight: 600; letter-spacing: -.02em; margin: 0; }
+    .desc { margin: 0; color: var(--muted); font-size: .95rem; }
+    .tags { display: flex; flex-wrap: wrap; gap: 6px; }
+    .tags span { font-size: .75rem; font-weight: 600; padding: 3px 10px; border-radius: 999px; background: #f2f2f0; }
+    .open { font-weight: 600; font-size: .9rem; display: inline-flex; align-items: center; gap: 6px; }
+    .notes { margin-top: 40px; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+    @media (max-width: 900px) { .notes { grid-template-columns: minmax(0, 1fr); } }
+    .note { background: var(--card); border: 1px solid var(--line); border-radius: 20px; padding: 22px; }
+    .note h2 { font-size: 1rem; margin: 0 0 10px; }
+    .note ul { margin: 0; padding-left: 18px; color: var(--muted); display: grid; gap: 6px; font-size: .93rem; }
+    .warn { display: inline-block; margin-top: 18px; background: #fbf0dc; color: #8a5300; padding: 6px 12px; border-radius: 999px; font-size: .82rem; font-weight: 600; }
+    @media (prefers-reduced-motion: reduce) { a.concept { transition: none; } a.concept:active { transform: none; } }
+  </style>
+</head>
+<body>
+<main>
+  <span class="eyebrow">Contractor Desk · UI concepts for review</span>
+  <h1>Three directions for a cleaner, friendlier Contractor Desk</h1>
+  <p class="lead">Each concept is clickable and covers the same seven screens, so you can compare like for like: home, raising a request, contractor sign-up, a contractor's bid, the operator overview, comparing bids and choosing, and the developer's review.</p>
+  <span class="warn">Design mock-ups with made-up sample data. Not connected to the app or your Google Sheet.</span>
+
+  <section class="grid">
+    <a class="concept" href="concept-a-calm/index.html">
+      <div class="swatch" style="background:#efefed">
+        <div class="mock" style="background:#fff;box-shadow:0 10px 30px -14px rgba(0,0,0,.25)">
+          <div class="row"><div class="bar" style="width:22%;background:#111"></div><div class="bar" style="width:46%;background:#f1f1ef;margin-left:auto"></div></div>
+          <div class="bar" style="width:70%;height:14px;background:#111;margin:10px auto 0"></div>
+          <div class="bar" style="width:50%;background:#e6e6e3;margin:0 auto"></div>
+          <div class="row" style="margin-top:6px"><div class="bar" style="flex:1;height:26px;border-radius:999px;background:#f4f4f2"></div><div class="bar" style="width:22%;height:26px;border-radius:999px;background:#111"></div></div>
+          <div class="row"><div class="bar" style="flex:1;height:22px;background:#f4f4f2"></div><div class="bar" style="flex:1;height:22px;background:#e7c398"></div><div class="bar" style="flex:1;height:22px;background:#f4f4f2"></div></div>
+        </div>
+      </div>
+      <div class="body">
+        <p class="name">A · Calm</p>
+        <p class="desc">Apple-like and quiet. Soft grey canvas, white rounded cards, black pill buttons, a warm sand accent and a frosted floating navigation bar.</p>
+        <div class="tags"><span>System font / Inter</span><span>Cards</span><span>Floating nav</span></div>
+        <span class="open">Open concept A →</span>
+      </div>
+    </a>
+
+    <a class="concept" href="concept-b-editorial/index.html">
+      <div class="swatch" style="background:#fff;border:1px solid #ececea">
+        <div class="mock" style="background:transparent">
+          <div class="row"><div class="bar" style="width:18%;background:#0e0e0e"></div><div class="bar" style="width:8%;background:#f0542d;margin-left:auto"></div></div>
+          <div class="bar" style="width:84%;height:16px;background:#0e0e0e;margin:12px auto 0"></div>
+          <div class="bar" style="width:60%;height:16px;background:#0e0e0e;margin:0 auto"></div>
+          <div class="row" style="margin-top:8px"><div class="bar" style="flex:1;height:26px;border-radius:999px;background:#f5f5f3;border:1px solid #ececea"></div></div>
+          <div class="row"><div class="bar" style="flex:1;height:12px;background:#ececea"></div><div class="bar" style="flex:1;height:12px;background:#ececea"></div><div class="bar" style="flex:1;height:12px;background:#ececea"></div><div class="bar" style="flex:1;height:12px;background:#ececea"></div></div>
+        </div>
+      </div>
+      <div class="body">
+        <p class="name" style="font-family:'Inter Tight',Inter,sans-serif">B · Editorial</p>
+        <p class="desc">Bright and confident. Large headlines over a faint map, a single orange accent, and bids compared side by side in a clear table.</p>
+        <div class="tags"><span>Inter Tight</span><span>Comparison table</span><span>Landing page</span></div>
+        <span class="open">Open concept B →</span>
+      </div>
+    </a>
+
+    <a class="concept" href="concept-c-console/index.html">
+      <div class="swatch" style="background:linear-gradient(180deg,#e9ecea,#dfe3e1)">
+        <div class="mock" style="background:rgba(255,255,255,.55);display:grid;grid-template-columns:26% 1fr;gap:8px;width:86%">
+          <div style="display:grid;gap:6px;align-content:start"><div class="bar" style="background:#141716"></div><div class="bar" style="background:#fff"></div><div class="bar" style="background:#fff"></div><div class="bar" style="background:#fff"></div></div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px">
+            <div style="display:grid;gap:6px"><div class="bar" style="height:20px;background:#fff"></div><div class="bar" style="height:20px;background:#fff;box-shadow:0 0 0 1px #1f6f5c"></div><div class="bar" style="height:20px;background:#fff"></div></div>
+            <div style="border-radius:8px;background:#eef1ef;position:relative"><span style="position:absolute;left:40%;top:44%;width:10px;height:10px;border-radius:50%;background:#1f6f5c"></span></div>
+          </div>
+        </div>
+      </div>
+      <div class="body">
+        <p class="name" style="font-family:Manrope,Inter,sans-serif">C · Console</p>
+        <p class="desc">A focused work tool for running requests. Frosted sidebar, list beside a map, and a list-plus-detail view for comparing bids.</p>
+        <div class="tags"><span>Manrope</span><span>Sidebar</span><span>Split views</span></div>
+        <span class="open">Open concept C →</span>
+      </div>
+    </a>
+  </section>
+
+  <section class="notes">
+    <div class="note">
+      <h2>What all three keep from your product rules</h2>
+      <ul>
+        <li>Bids are grouped by unit. ₹/sq ft, ₹/day and fixed prices are never ranked against each other.</li>
+        <li>A start up to 2 days later is shown but clearly marked, and can't be chosen until confirmed.</li>
+        <li>Ratings show the number of reviews. No reviews means "Not yet rated"; fewer than three is "too few to judge".</li>
+        <li>Phone numbers stay hidden until a contractor is chosen.</li>
+        <li>Contractor screens work in English, हिन्दी and मराठी (Hindi and Marathi still need a native speaker's review).</li>
+      </ul>
+    </div>
+    <div class="note">
+      <h2>How to review</h2>
+      <ul>
+        <li>Use the dark bar at the bottom of each concept to jump between the seven screens.</li>
+        <li>Try it: fill in a request, switch the contractor screens to Hindi, send a bid, and on "Compare &amp; choose" select a bidder, then open the Job tab.</li>
+        <li>Narrow the window (or open on a phone) to check the mobile layout.</li>
+        <li>No statistics are invented: the home page shows product rules, not user counts.</li>
+      </ul>
+    </div>
+  </section>
+</main>
+</body>
+</html>

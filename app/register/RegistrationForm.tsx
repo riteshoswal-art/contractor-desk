@@ -47,6 +47,8 @@ export default function RegistrationForm({ initialLanguage }: { initialLanguage?
     "idle",
   );
   const [savedAsTest, setSavedAsTest] = useState(false);
+  // Live demo only: a one-time link to connect this contractor's own Telegram.
+  const [telegramUrl, setTelegramUrl] = useState("");
   const formRef = useRef<HTMLFormElement>(null);
 
   // Validators answer in English; show the person's own language.
@@ -92,11 +94,15 @@ export default function RegistrationForm({ initialLanguage }: { initialLanguage?
         recordType?: string;
         error?: string;
         errors?: FormErrors;
+        telegramConnectUrl?: string;
       } = await response.json().catch(() => ({}));
 
       if (response.ok && result.ok === true) {
         setValues(emptyValues);
         setSavedAsTest(result.recordType === "TEST");
+        // Only a well-formed t.me link from our own server is shown.
+        const url = result.telegramConnectUrl ?? "";
+        setTelegramUrl(/^https:\/\/t\.me\/[A-Za-z0-9_]{5,32}\?start=[A-Za-z0-9_-]{24}$/.test(url) ? url : "");
         setStatus("saved");
       } else if (result.error === "validation" && result.errors) {
         // The server found a problem the browser did not.
@@ -154,6 +160,21 @@ export default function RegistrationForm({ initialLanguage }: { initialLanguage?
             {savedAsTest && (
               <span className="mt-1 block font-normal">{d.register.testMode}</span>
             )}
+          </div>
+        )}
+
+        {status === "saved" && telegramUrl && (
+          <div className="rounded-md border border-sky-300 bg-sky-50 p-4 text-sm text-sky-950">
+            <p className="font-semibold">{d.register.telegramTitle}</p>
+            <p className="mt-1">{d.register.telegramBody}</p>
+            <a
+              href={telegramUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="mt-3 inline-block rounded-md bg-sky-700 px-4 py-2.5 text-base font-semibold text-white hover:bg-sky-800"
+            >
+              {d.register.telegramButton}
+            </a>
           </div>
         )}
 
