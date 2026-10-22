@@ -1,4 +1,4 @@
-import { saveContractor, SheetSetupError } from "@/lib/contractor-store";
+import { contractorIdForPhone, saveContractor, SheetSetupError } from "@/lib/contractor-store";
 import {
   getContractorSheet,
   getRecordType,
@@ -80,19 +80,24 @@ export async function POST(request: Request) {
     }
     // LIVE DEMO only (fixture mode, bot set up): offer the new contractor a
     // one-time link to connect their own Telegram chat for job alerts.
+    // A person who registers again with the same number (for example after a
+    // rehearsal) gets the link for their existing registration. This happens
+    // only in the local data mode; with real data a repeat stays silent.
     let telegramConnectUrl: string | undefined;
-    if (outcome === "saved" && fixturesEnabled()) {
+    const local = fixturesEnabled();
+    if (local) {
       try {
         const token = telegramToken();
         const username = token ? await botUsername(token) : null;
-        if (username) telegramConnectUrl = pairingUrl(username, newPairingCode(id).code);
+        const contractorId = outcome === "saved" ? id : await contractorIdForPhone(getContractorSheet(), parsed.values.phone, recordType);
+        if (username && contractorId) telegramConnectUrl = pairingUrl(username, newPairingCode(contractorId).code);
       } catch {
         console.error("[contractors] telegram_link_failed");
       }
     }
     // Otherwise "saved" and "duplicate" look identical to the caller on purpose,
     // so the form can never be used to find out who is already registered.
-    return reply({ ok: true, recordType, ...(telegramConnectUrl ? { telegramConnectUrl } : {}) }, 200);
+    return reply({ ok: true, recordType, ...(local ? { localMode: true } : {}), ...(telegramConnectUrl ? { telegramConnectUrl } : {}) }, 200);
   } catch (error) {
     // Log a short label only. Error objects can contain request details.
     const label =

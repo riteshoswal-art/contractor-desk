@@ -450,7 +450,7 @@ test("the bid panel offers the Telegram demo only for TEST data, says plainly wh
   assert.ok(off.includes("Telegram is not fully set up yet") && off.includes("previews"));
   assert.ok(!/Delivered/.test(off));
   const on = render({ configured: true, testMode: true });
-  assert.ok(on.includes("connected their own Telegram") && on.includes("only their own one-time bid link") && !on.includes("not fully set up"));
+  assert.ok(on.includes("connected their own Telegram") && on.includes("Yes / No") && !on.includes("not fully set up"));
   const real = render({ configured: true, testMode: false });
   assert.ok(real.includes("REAL data, so Telegram notifications are switched off") && !real.includes("Notify all eligible"));
 });

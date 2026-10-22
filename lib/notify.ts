@@ -33,7 +33,7 @@ export type NotifyItem = {
   contractorId: string;
   name: string;
   status: "sent" | "preview" | "failed" | "skipped" | "not_connected";
-  reason?: "recently_sent" | "already_bid" | "not_candidate" | "unavailable" | "bidding_not_open" | "invalid" | "not_found";
+  reason?: "already_asked" | "recently_sent" | "already_bid" | "not_candidate" | "unavailable" | "bidding_not_open" | "invalid" | "not_found";
   error?: SendError;
   link?: string; // shown once to the admin, like any new bid link
   expiresAt?: string;

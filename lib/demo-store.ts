@@ -43,7 +43,15 @@ export type Conversation = {
 };
 
 // The bids sent to the builder for one ticket, with one "Choose" button each.
-export type BidSummary = { id: string; requestId: string; sentAt: string; to: "builder" | "founder" | "nobody"; options: { bidId: string; contractorId: string }[] };
+export type BidSummary = {
+  id: string;
+  requestId: string;
+  sentAt: string;
+  to: "builder" | "founder" | "nobody";
+  options: { bidId: string; contractorId: string }[];
+  chatId?: string; // where it was delivered, so an updated summary can retire its buttons
+  messageId?: number;
+};
 export type Match = { requestId: string; bidId: string; contractorId: string; matchedAt: string };
 
 export type DemoState = {

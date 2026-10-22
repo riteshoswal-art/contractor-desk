@@ -356,3 +356,52 @@ test("older saved data loses its on-screen labels when loaded", () => {
   const shown = JSON.stringify([tabs.Contractors.map((r) => r[name]), tabs.Reviews.map((r) => r[comment]), tabs.Requests.map((r) => r[desc])]);
   assert.ok(!/demo|fixture|sample|made-up/i.test(shown));
 });
+
+async function quote(id, amount) {
+  const c = convOf(id);
+  await run(env, { taps: [tap(CHAT[id], `y:${c.id}`)] });
+  await run(env, { messages: [msg(CHAT[id], amount)] });
+  await run(env, { taps: [tap(CHAT[id], `u:${c.id}:2`)] });
+  await run(env, { taps: [tap(CHAT[id], `s:${c.id}`)] });
+}
+
+test("a quote that arrives after the bids message brings an updated message with every quote, and the old Choose buttons are retired", async () => {
+  await connectContractors([RAMESH, SUNIL]);
+  const { requestId } = await builderWithTicket();
+  await askContractors(sheet, requestId, env);
+  await quote(RAMESH, "1500");
+  const later = { ...env, now: new Date(Date.now() + SUMMARY_AFTER_MS + 1000) };
+  assert.deepEqual(await sendDueSummaries(sheet, later), [requestId]); // 10 minutes: Sunil has not answered
+  const first = demoState().summaries[requestId];
+  assert.equal(first.options.length, 1);
+  assert.deepEqual(await sendDueSummaries(sheet, later), [], "nothing new, nothing sent");
+
+  t.reset();
+  await quote(SUNIL, "1200");
+  assert.deepEqual(await sendDueSummaries(sheet, later), [requestId]);
+  const update = t.last(BUILDER_CHAT);
+  assert.match(update.text, /Updated bids: a new quote arrived/);
+  assert.match(update.text, /1\. Sunil More: ₹1,200 per day[\s\S]*2\. Ramesh Patil: ₹1,500 per day/);
+  assert.equal(update.reply_markup.inline_keyboard.length, 2);
+  assert.ok(t.calls.some((c) => c.method === "editMessageReplyMarkup" && c.body.message_id === first.messageId), "the old buttons are removed");
+  // The old message's Choose no longer works; the new one does.
+  const old = `p:${first.id}:0`;
+  assert.equal(await handleTap(sheet, tap(BUILDER_CHAT, old), env), "choose:unknown_summary");
+  const pick = update.reply_markup.inline_keyboard[0][0].callback_data;
+  assert.equal(await handleTap(sheet, tap(BUILDER_CHAT, pick), env), `choose:matched ${requestId}`);
+  await quote(RAMESH, "900"); // already bid: nothing new to show
+  assert.deepEqual(await sendDueSummaries(sheet, later), [], "after the match, no more updates");
+});
+
+test("a bids message Telegram did not accept is not marked as sent, and goes out on the next round", async () => {
+  await connectContractors([RAMESH]);
+  const { requestId } = await builderWithTicket();
+  await askContractors(sheet, requestId, env);
+  await quote(RAMESH, "1500");
+  const failing = { ...env, fetchImpl: async () => ({ status: 0, json: async () => ({}) }) };
+  assert.deepEqual(await sendDueSummaries(sheet, failing), []);
+  assert.equal(demoState().summaries[requestId], undefined);
+  t.reset();
+  assert.deepEqual(await sendDueSummaries(sheet, env), [requestId]);
+  assert.match(t.last(BUILDER_CHAT).text, /Bids for your ticket/);
+});

@@ -289,24 +289,35 @@ function builderChatFor(requestId: string, env: FlowEnv): { chatId: string; to: 
 }
 
 // Sends the bid summary for every ticket whose contractors have all answered, or
-// whose first question went out at least 10 minutes ago. Once per ticket.
+// whose first question went out at least 10 minutes ago. If a quote arrives
+// after that (and nobody is chosen yet), an updated summary replaces it. A
+// summary that Telegram did not accept is tried again on the next round.
 export async function sendDueSummaries(sheet: ContractorSheet, env: FlowEnv): Promise<string[]> {
   const nowMs = nowOf(env).getTime();
   const byRequest = new Map<string, Conversation[]>();
   for (const c of Object.values(demoState().conversations)) byRequest.set(c.requestId, [...(byRequest.get(c.requestId) ?? []), c]);
   const sent: string[] = [];
   for (const [requestId, convs] of byRequest) {
-    if (demoState().summaries[requestId]) continue;
+    const previous = demoState().summaries[requestId];
+    if (previous) {
+      if (demoState().matches[requestId]) continue;
+      const shown = new Set(previous.options.map((o) => o.bidId));
+      const bids = (await loadBids(sheet, env.recordType)).filter((b) => b.requestId === requestId && !b.voided);
+      if (bids.every((b) => shown.has(b.id))) continue;
+      if (await sendSummary(sheet, requestId, convs, env, previous)) sent.push(requestId);
+      continue;
+    }
     const open = convs.some((c) => c.stage === "asked" || c.stage.startsWith("awaiting"));
     const firstAsk = Math.min(...convs.map((c) => Date.parse(c.askedAt)));
     if (open && nowMs - firstAsk < SUMMARY_AFTER_MS) continue;
-    await sendSummary(sheet, requestId, convs, env);
-    sent.push(requestId);
+    if (await sendSummary(sheet, requestId, convs, env)) sent.push(requestId);
   }
   return sent;
 }
 
-export async function sendSummary(sheet: ContractorSheet, requestId: string, convs: Conversation[], env: FlowEnv): Promise<BidSummary | null> {
+// Returns the summary once it is recorded: after Telegram accepted it, or at
+// once when there is nobody to send it to. null means "try again later".
+export async function sendSummary(sheet: ContractorSheet, requestId: string, convs: Conversation[], env: FlowEnv, previous?: BidSummary): Promise<BidSummary | null> {
   const request = await requestById(sheet, requestId, env.recordType);
   if (!request) return null;
   const bids = (await loadBids(sheet, env.recordType)).filter((b) => b.requestId === requestId && !b.voided);
@@ -323,7 +334,7 @@ export async function sendSummary(sheet: ContractorSheet, requestId: string, con
   }
   const summaryId = shortId();
   const options: { bidId: string; contractorId: string }[] = [];
-  const lines = ["Contractor Desk · Bids for your ticket", `Ticket ${requestId}: ${request.trade} in ${request.area}`, ...jobLines(request).slice(1), ""];
+  const lines = [previous ? "Contractor Desk · Updated bids: a new quote arrived" : "Contractor Desk · Bids for your ticket",`Ticket ${requestId}: ${request.trade} in ${request.area}`, ...jobLines(request).slice(1), ""];
   if (rows.length === 0) lines.push("No contractor sent a quotation for this ticket.");
   else {
     lines.push("Prices are compared only within the same unit. We never add them up into a total.");
@@ -354,14 +365,18 @@ export async function sendSummary(sheet: ContractorSheet, requestId: string, con
   if (dest?.to === "founder") lines.unshift("(Sent to the Contractor Desk team: the builder has not connected Telegram.)");
 
   const summary: BidSummary = { id: summaryId, requestId, sentAt: nowOf(env).toISOString(), to: dest?.to ?? "nobody", options };
-  updateDemo((s) => {
-    s.summaries[requestId] = summary; // recorded first, so it is never sent twice
-  });
   if (dest) {
     const text = lines.join("\n");
-    if (buttons.length) await sendWithButtons(env.token, dest.chatId, text, buttons, env.fetchImpl);
-    else await sendToChat(env.token, dest.chatId, text, env.fetchImpl);
+    const result = buttons.length ? await sendWithButtons(env.token, dest.chatId, text, buttons, env.fetchImpl) : await sendToChat(env.token, dest.chatId, text, env.fetchImpl);
+    if (!result.ok) return null; // not recorded: the next round tries again
+    summary.chatId = dest.chatId;
+    summary.messageId = result.messageId;
+    // The older message's Choose buttons would no longer work: remove them.
+    if (previous?.chatId && previous.messageId) await removeButtons(env.token, previous.chatId, previous.messageId, env.fetchImpl);
   }
+  updateDemo((s) => {
+    s.summaries[requestId] = summary;
+  });
   return summary;
 }
 

@@ -28,6 +28,7 @@ const ASHA_CHAT = "600000001";
 const BHIM_CHAT = "600000002";
 const CFG = { configured: true, token: TOKEN, chatId: BUILDER_CHAT };
 const REQ = "R-FIXTURE2";
+const RAMESH = "C-PLMBRMSH";
 const ASHA = "C-ASHAASHA", BHIM = "C-BHIMBHIM", CHITRA = "C-CHITRACH";
 const ENV = { recordType: "TEST", today: todayInIndia() };
 
@@ -376,19 +377,21 @@ test("the live demo saves its data to a local file and loads it again after a re
     delete globalThis.__contractorDeskFixtureSheet;
     process.env.CONTRACTOR_DESK_FIXTURE_FILE = file;
     const sheet = fixtureSheet();
+    // A fresh start holds only the seed contractors with their past jobs and reviews.
+    assert.ok(!sheet.tabs.Contractors.some((r) => r[0] === ASHA) && !sheet.tabs.Requests.some((r) => r[0] === REQ));
+    assert.ok(sheet.tabs.Contractors.some((r) => r[0] === RAMESH) && sheet.tabs.Reviews.length > 1);
     const t = fakeTelegram();
-    await pair(sheet, t, ASHA, ASHA_CHAT, 90);
-    await openBidding(sheet, { requestId: REQ }, ENV, nid("E"));
+    await pair(sheet, t, RAMESH, ASHA_CHAT, 90);
     const onDisk = loadSnapshot(file);
-    assert.equal(onDisk.demo.links[ASHA].chatId, ASHA_CHAT);
-    assert.ok(onDisk.tabs.Bids.length > 1);
+    assert.equal(onDisk.demo.links[RAMESH].chatId, ASHA_CHAT);
+    assert.ok(onDisk.tabs.Reviews.length > 1);
 
     // "restart": forget memory, load from the file
     delete globalThis.__contractorDeskFixtureSheet;
     setDemoState(emptyDemoState());
     const again = fixtureSheet();
-    assert.equal(demoState().links[ASHA].chatId, ASHA_CHAT);
-    assert.equal(again.tabs.Bids.length, onDisk.tabs.Bids.length);
+    assert.equal(demoState().links[RAMESH].chatId, ASHA_CHAT);
+    assert.equal(again.tabs.Reviews.length, onDisk.tabs.Reviews.length);
     assert.equal(loadSnapshot(path.join(dir, "missing.json")), null);
     fs.writeFileSync(file, "{not json");
     assert.equal(loadSnapshot(file), null, "an unreadable file is ignored, not trusted");

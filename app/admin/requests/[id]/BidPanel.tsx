@@ -192,8 +192,8 @@ export default function BidPanel({ panel, today, telegram }: { panel: BidPanelDa
             ) : (
               <>
                 <p className="text-zinc-700">
-                  Each contractor who <strong>connected their own Telegram</strong> gets one private message with a short job
-                  summary and only their own one-time bid link. Contractors who have not connected get nothing and are shown as
+                  Each contractor who <strong>connected their own Telegram</strong> gets the job on Telegram with Yes / No
+                  buttons and sends one quote there. Contractors who have not connected get nothing and are shown as
                   &ldquo;Not connected&rdquo;.
                   {!telegram.configured && (
                     <>

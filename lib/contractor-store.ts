@@ -63,3 +63,18 @@ export async function saveContractor(
   await sheet.append(`${TAB}!A1`, buildContractorRow(values, meta));
   return "saved";
 }
+
+// Local data mode only (the caller checks fixturesEnabled): the ID of the
+// contractor already registered with this phone number, so a person who
+// registers again can still connect their Telegram. Never used with REAL data.
+export async function contractorIdForPhone(sheet: ContractorSheet, phoneInput: string, recordType: RecordType): Promise<string | null> {
+  if (recordType !== "TEST") return null;
+  const [idRows, typeRows, phoneRows] = await sheet.read([
+    `${TAB}!${columnLetter("contractor_id")}2:${columnLetter("contractor_id")}`,
+    `${TAB}!${columnLetter("record_type")}2:${columnLetter("record_type")}`,
+    `${TAB}!${columnLetter("phone")}2:${columnLetter("phone")}`,
+  ]);
+  const phone = normalizePhone(phoneInput);
+  const i = phoneRows.findIndex((row, n) => row[0] === phone && (typeRows[n]?.[0] ?? "") === recordType);
+  return i >= 0 ? (idRows[i]?.[0] ?? null) : null;
+}

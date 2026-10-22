@@ -113,7 +113,9 @@ export function validate(
 ): FormErrors {
   const errors: FormErrors = {};
 
-  if (values.name.trim().length > 80) {
+  if (!values.name.trim()) {
+    errors.name = "Please enter your name.";
+  } else if (values.name.trim().length > 80) {
     errors.name = "Name must be 80 characters or fewer.";
   }
 

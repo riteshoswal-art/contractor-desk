@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { fill, getDict, translateMessage } from "@/lib/i18n";
 import type { LanguageCode } from "@/lib/language";
 import {
@@ -50,6 +50,12 @@ export default function RegistrationForm({ initialLanguage }: { initialLanguage?
   // Live demo only: a one-time link to connect this contractor's own Telegram.
   const [telegramUrl, setTelegramUrl] = useState("");
   const formRef = useRef<HTMLFormElement>(null);
+  const doneRef = useRef<HTMLDivElement>(null);
+
+  // The form is replaced by the success panel: bring it into view on a phone.
+  useEffect(() => {
+    if (status === "saved") doneRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+  }, [status]);
 
   // Validators answer in English; show the person's own language.
   const msg = (key: keyof FormErrors) => translateMessage(language, errors[key]);
@@ -92,6 +98,7 @@ export default function RegistrationForm({ initialLanguage }: { initialLanguage?
       const result: {
         ok?: boolean;
         recordType?: string;
+        localMode?: boolean;
         error?: string;
         errors?: FormErrors;
         telegramConnectUrl?: string;
@@ -99,7 +106,9 @@ export default function RegistrationForm({ initialLanguage }: { initialLanguage?
 
       if (response.ok && result.ok === true) {
         setValues(emptyValues);
-        setSavedAsTest(result.recordType === "TEST");
+        // The local data mode keeps everything on this computer; it does not
+        // need a "test record" warning on the contractor's screen.
+        setSavedAsTest(result.recordType === "TEST" && !result.localMode);
         // Only a well-formed t.me link from our own server is shown.
         const url = result.telegramConnectUrl ?? "";
         setTelegramUrl(/^https:\/\/t\.me\/[A-Za-z0-9_]{5,32}\?start=[A-Za-z0-9_-]{24}$/.test(url) ? url : "");
@@ -141,6 +150,38 @@ export default function RegistrationForm({ initialLanguage }: { initialLanguage?
 
       <LanguageSelector language={language} onChange={setLanguage} />
 
+      {status === "saved" ? (
+        <div ref={doneRef} className="mt-8 scroll-mt-24 space-y-4">
+          <div role="status" className="rounded-[20px] bg-[var(--ok-bg)] p-5 text-base font-medium text-[var(--ok-ink)]">
+            {d.register.success}
+            {savedAsTest && <span className="mt-1 block text-sm font-normal">{d.register.testMode}</span>}
+          </div>
+          {telegramUrl && (
+            <div className="rounded-[20px] border-2 border-[var(--ink)] p-5 text-sm">
+              <p className="text-lg font-semibold">{d.register.telegramTitle}</p>
+              <p className="mt-1 leading-6 text-zinc-700">{d.register.telegramBody}</p>
+              <a
+                href={telegramUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="mt-4 inline-flex min-h-12 w-full items-center justify-center rounded-full bg-[var(--ink)] px-5 text-base font-semibold text-white sm:w-auto"
+              >
+                {d.register.telegramButton}
+              </a>
+            </div>
+          )}
+          <button
+            type="button"
+            onClick={() => {
+              setStatus("idle");
+              setTelegramUrl("");
+            }}
+            className="text-sm font-medium underline"
+          >
+            {d.register.registerAnother}
+          </button>
+        </div>
+      ) : (
       <form ref={formRef} onSubmit={onSubmit} noValidate className="mt-8 space-y-6">
         {errorCount > 0 && (
           <div
@@ -148,33 +189,6 @@ export default function RegistrationForm({ initialLanguage }: { initialLanguage?
             className="rounded-md border border-red-300 bg-red-50 p-4 text-sm text-red-900"
           >
             {errorCount === 1 ? d.common.fixOne : fill(d.common.fixMany, { n: errorCount })}
-          </div>
-        )}
-
-        {status === "saved" && (
-          <div
-            role="status"
-            className="rounded-md border border-green-300 bg-green-50 p-4 text-sm font-medium text-green-900"
-          >
-            {d.register.success}
-            {savedAsTest && (
-              <span className="mt-1 block font-normal">{d.register.testMode}</span>
-            )}
-          </div>
-        )}
-
-        {status === "saved" && telegramUrl && (
-          <div className="rounded-md border border-sky-300 bg-sky-50 p-4 text-sm text-sky-950">
-            <p className="font-semibold">{d.register.telegramTitle}</p>
-            <p className="mt-1">{d.register.telegramBody}</p>
-            <a
-              href={telegramUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="mt-3 inline-block rounded-md bg-sky-700 px-4 py-2.5 text-base font-semibold text-white hover:bg-sky-800"
-            >
-              {d.register.telegramButton}
-            </a>
           </div>
         )}
 
@@ -197,8 +211,7 @@ export default function RegistrationForm({ initialLanguage }: { initialLanguage?
 
         <div>
           <label htmlFor="name" className={labelClass}>
-            {d.register.nameLabel}{" "}
-            <span className="font-normal text-zinc-600">{d.common.optional}</span>
+            {d.register.nameLabel} <span className="text-red-700">*</span>
           </label>
           <input
             id="name"
@@ -390,6 +403,7 @@ export default function RegistrationForm({ initialLanguage }: { initialLanguage?
           {status === "sending" ? d.register.submitting : d.register.submit}
         </button>
       </form>
+      )}
     </div>
   );
 }

@@ -70,6 +70,7 @@ const EN = {
     submitting: "Submitting…",
     success: "Thank you. Your registration has been received and stored privately.",
     testMode: "Test mode: this was saved as a TEST record, not a real registration.",
+    registerAnother: "Register another person",
     failed: "Sorry, we could not save your registration. Nothing was saved. Please try again later.",
     telegramTitle: "Get job alerts on Telegram",
     telegramBody: "Tap the button. Telegram opens; then press Start. Jobs that match your registration will come to you as a private message. The link works once, for 30 minutes.",
@@ -81,7 +82,7 @@ const EN = {
       "Describe in your own words what happened and what you need, then fill in the details. You check everything before anything is saved.",
     noteTitle: "Before you start.",
     noteBody:
-      "Real requests are not sent to any AI service: you enter the details yourself. (Google's Gemini AI is used only for our own tests with made-up text.) Please do not include personal details in the description. Saving a request does not contact or match any contractor.",
+      "Your request is not sent to any AI service: you enter the details yourself. Please do not include personal details in the description. Saving a request does not contact or match any contractor.",
     descriptionLabel: "What happened, and what do you need?",
     descriptionPlaceholder:
       "e.g. Our plumbing contractor at the Baner site left halfway through. We need a replacement plumber from next Monday for about two weeks.",
@@ -93,7 +94,7 @@ const EN = {
     noticeReadFailed:
       "We could not read your description automatically. Please fill in the details below yourself.",
     noticeAi:
-      "Synthetic test mode: these details were read automatically and may be wrong. Please check every field before saving.",
+      "These details were read automatically and may be wrong. Please check every field before saving.",
     moreDetail: "We need a little more detail:",
     tradeLabel: "Trade needed",
     tradePlaceholder: "Select a trade",
@@ -187,6 +188,7 @@ const EN = {
       "I agree that the details I enter will be stored privately and used to look for contractors for this requirement, and that I may be contacted about this requirement. My details are not sent to any AI service. I understand that I can request deletion of my details.",
   },
   validation: {
+    enterName: "Please enter your name.",
     nameTooLong: "Name must be 80 characters or fewer.",
     chooseTrade: "Please choose your primary trade.",
     chooseArea: "Please choose your service area.",
@@ -290,6 +292,7 @@ const HI: Dict = {
     submitting: "भेजा जा रहा है…",
     success: "धन्यवाद। आपका पंजीकरण मिल गया है और निजी रूप से सुरक्षित रखा गया है।",
     testMode: "टेस्ट मोड: यह एक TEST रिकॉर्ड के रूप में सहेजा गया है, असली पंजीकरण नहीं।",
+    registerAnother: "किसी और का पंजीकरण करें",
     failed: "क्षमा करें, हम आपका पंजीकरण सहेज नहीं सके। कुछ भी सहेजा नहीं गया। कृपया बाद में फिर कोशिश करें।",
     telegramTitle: "Telegram पर काम की सूचनाएँ पाएँ",
     telegramBody: "बटन दबाएँ। Telegram खुलेगा; फिर Start दबाएँ। आपके पंजीकरण से मेल खाने वाले काम आपको निजी संदेश में मिलेंगे। यह लिंक एक बार, 30 मिनट तक काम करता है।",
@@ -301,7 +304,7 @@ const HI: Dict = {
       "अपने शब्दों में बताइए कि क्या हुआ और आपको क्या चाहिए, फिर विवरण भरें। कुछ भी सहेजने से पहले आप सब कुछ खुद जाँचते हैं।",
     noteTitle: "शुरू करने से पहले।",
     noteBody:
-      "असली अनुरोध किसी AI सेवा को नहीं भेजे जाते: विवरण आप खुद भरते हैं। (Google का Gemini AI केवल हमारे अपने परीक्षणों में, काल्पनिक पाठ के साथ उपयोग होता है।) कृपया विवरण में निजी जानकारी न लिखें। अनुरोध सहेजने से किसी ठेकेदार से संपर्क या मिलान नहीं होता।",
+      "असली अनुरोध किसी AI सेवा को नहीं भेजे जाते: विवरण आप खुद भरते हैं। कृपया विवरण में निजी जानकारी न लिखें। अनुरोध सहेजने से किसी ठेकेदार से संपर्क या मिलान नहीं होता।",
     descriptionLabel: "क्या हुआ, और आपको क्या चाहिए?",
     descriptionPlaceholder:
       "जैसे: बाणेर साइट पर हमारा प्लंबिंग ठेकेदार काम अधूरा छोड़कर चला गया। हमें अगले सोमवार से करीब दो हफ़्ते के लिए नया प्लंबर चाहिए।",
@@ -312,7 +315,7 @@ const HI: Dict = {
     noticeManual: "कृपया नीचे का विवरण खुद भरें। आपका विवरण किसी AI सेवा को नहीं भेजा गया।",
     noticeReadFailed: "हम आपके विवरण को अपने-आप नहीं पढ़ सके। कृपया नीचे का विवरण खुद भरें।",
     noticeAi:
-      "सिंथेटिक टेस्ट मोड: ये विवरण अपने-आप पढ़े गए हैं और गलत हो सकते हैं। सहेजने से पहले हर खाना जाँच लें।",
+      "ये विवरण अपने-आप पढ़े गए हैं और गलत हो सकते हैं। सहेजने से पहले हर खाना जाँच लें।",
     moreDetail: "हमें थोड़ी और जानकारी चाहिए:",
     tradeLabel: "कौन सा काम चाहिए",
     tradePlaceholder: "काम चुनें",
@@ -406,6 +409,7 @@ const HI: Dict = {
       "मैं सहमत हूँ कि मेरे द्वारा दी गई जानकारी निजी तौर पर सुरक्षित रखी जाएगी और इस आवश्यकता के लिए ठेकेदार खोजने में उपयोग की जाएगी, और इस आवश्यकता के बारे में मुझसे संपर्क किया जा सकता है। मेरी जानकारी किसी AI सेवा को नहीं भेजी जाती। मैं समझता/समझती हूँ कि मैं अपनी जानकारी हटवाने का अनुरोध कर सकता/सकती हूँ।",
   },
   validation: {
+    enterName: "कृपया अपना नाम लिखें।",
     nameTooLong: "नाम 80 अक्षरों या उससे कम का होना चाहिए।",
     chooseTrade: "कृपया अपना मुख्य काम (ट्रेड) चुनें।",
     chooseArea: "कृपया अपना सेवा क्षेत्र चुनें।",
@@ -505,6 +509,7 @@ const MR: Dict = {
     submitting: "पाठवत आहे…",
     success: "धन्यवाद. तुमची नोंदणी मिळाली आहे आणि खाजगीरित्या जतन केली आहे.",
     testMode: "टेस्ट मोड: हे TEST रेकॉर्ड म्हणून जतन केले आहे, खरी नोंदणी नाही.",
+    registerAnother: "दुसऱ्या व्यक्तीची नोंदणी करा",
     failed: "क्षमस्व, आम्ही तुमची नोंदणी जतन करू शकलो नाही. काहीही जतन झाले नाही. कृपया नंतर पुन्हा प्रयत्न करा.",
     telegramTitle: "Telegram वर कामाच्या सूचना मिळवा",
     telegramBody: "बटण दाबा. Telegram उघडेल; नंतर Start दाबा. तुमच्या नोंदणीशी जुळणारी कामे तुम्हाला खाजगी संदेशात मिळतील. हा दुवा एकदाच, 30 मिनिटांसाठी चालतो.",
@@ -516,7 +521,7 @@ const MR: Dict = {
       "तुमच्या शब्दांत सांगा काय झाले आणि तुम्हाला काय हवे आहे, मग तपशील भरा. काहीही जतन करण्यापूर्वी तुम्ही सर्व काही स्वतः तपासता.",
     noteTitle: "सुरू करण्यापूर्वी.",
     noteBody:
-      "खरे अर्ज कोणत्याही AI सेवेला पाठवले जात नाहीत: तपशील तुम्ही स्वतः भरता. (Google चे Gemini AI फक्त आमच्या स्वतःच्या चाचण्यांमध्ये, काल्पनिक मजकुरासह वापरले जाते.) कृपया वर्णनात वैयक्तिक माहिती लिहू नका. अर्ज जतन केल्याने कोणत्याही कंत्राटदाराशी संपर्क किंवा जुळवणी होत नाही.",
+      "खरे अर्ज कोणत्याही AI सेवेला पाठवले जात नाहीत: तपशील तुम्ही स्वतः भरता. कृपया वर्णनात वैयक्तिक माहिती लिहू नका. अर्ज जतन केल्याने कोणत्याही कंत्राटदाराशी संपर्क किंवा जुळवणी होत नाही.",
     descriptionLabel: "काय झाले, आणि तुम्हाला काय हवे आहे?",
     descriptionPlaceholder:
       "उदा. बाणेर साइटवरील आमचा प्लंबिंग कंत्राटदार काम अर्धवट सोडून गेला. आम्हाला पुढच्या सोमवारपासून सुमारे दोन आठवड्यांसाठी नवीन प्लंबर हवा आहे.",
@@ -527,7 +532,7 @@ const MR: Dict = {
     noticeManual: "कृपया खालील तपशील स्वतः भरा. तुमचे वर्णन कोणत्याही AI सेवेला पाठवले गेले नाही.",
     noticeReadFailed: "आम्ही तुमचे वर्णन आपोआप वाचू शकलो नाही. कृपया खालील तपशील स्वतः भरा.",
     noticeAi:
-      "सिंथेटिक टेस्ट मोड: हे तपशील आपोआप वाचले आहेत आणि चुकीचे असू शकतात. जतन करण्यापूर्वी प्रत्येक रकाना तपासा.",
+      "हे तपशील आपोआप वाचले आहेत आणि चुकीचे असू शकतात. जतन करण्यापूर्वी प्रत्येक रकाना तपासा.",
     moreDetail: "आम्हाला आणखी थोडी माहिती हवी आहे:",
     tradeLabel: "कोणते काम हवे",
     tradePlaceholder: "काम निवडा",
@@ -621,6 +626,7 @@ const MR: Dict = {
       "मी दिलेली माहिती खाजगीरित्या जतन केली जाईल आणि या गरजेसाठी कंत्राटदार शोधण्यासाठी वापरली जाईल, तसेच या गरजेबद्दल माझ्याशी संपर्क साधला जाऊ शकतो, याला माझी संमती आहे. माझी माहिती कोणत्याही AI सेवेला पाठवली जात नाही. मला माझी माहिती हटवण्याची विनंती करता येते, हे मला समजते.",
   },
   validation: {
+    enterName: "कृपया तुमचे नाव लिहा.",
     nameTooLong: "नाव 80 अक्षरांपेक्षा जास्त नसावे.",
     chooseTrade: "कृपया तुमचे मुख्य काम (ट्रेड) निवडा.",
     chooseArea: "कृपया तुमचे सेवा क्षेत्र निवडा.",

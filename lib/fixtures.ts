@@ -121,7 +121,9 @@ export function fixtureSheet(): MemorySheet {
   if (saved) setDemoState(saved.demo);
   // Tabs added since the file was saved (for example a newer feature) are created empty.
   const fresh = buildFixtureSheet().tabs;
-  const tabs = saved ? { ...fresh, ...saved.tabs } : fresh;
+  // A fresh start (no saved file yet) holds only the seed data added below:
+  // the made-up contractors with their past jobs and reviews.
+  const tabs = saved ? { ...fresh, ...saved.tabs } : Object.fromEntries(Object.entries(fresh).map(([tab, grid]) => [tab, grid.slice(0, 1)]));
   ensureDemoSeed(tabs); // adds the labelled live-demo contractors if missing (lib/demo-seed.ts)
   const save = () => {
     try {

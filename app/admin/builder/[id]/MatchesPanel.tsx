@@ -24,6 +24,7 @@ const button = "rounded-md bg-blue-800 px-4 py-2 text-sm font-semibold text-whit
 const quiet = "rounded-md border border-zinc-400 bg-white px-3 py-1.5 text-sm font-semibold text-zinc-900 hover:bg-zinc-50 disabled:opacity-60";
 
 const REASON: Record<string, string> = {
+  already_asked: "already asked on Telegram",
   recently_sent: "already notified in the last minute",
   already_bid: "already bid",
   not_candidate: "no longer a match",
@@ -115,8 +116,8 @@ export default function MatchesPanel({ requestId, rows, botReady, builderAlertsR
         </p>
       </div>
       <p className="mt-1 text-sm text-zinc-700">
-        Matched by trade, locality, availability and start date. Each connected contractor gets one private Telegram message with only
-        their own bid link. Nothing is sent until you press a button.
+        Matched by trade, locality, availability and start date. Each available, connected contractor gets the job on Telegram with
+        Yes / No buttons and quotes there. Nothing is sent until you press a button.
       </p>
 
       {rows.length === 0 && <p className="mt-4 text-sm text-zinc-700">No registered contractor matches this ticket yet.</p>}

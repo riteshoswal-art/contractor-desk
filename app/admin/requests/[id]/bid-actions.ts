@@ -20,11 +20,12 @@ import { SheetSetupError } from "@/lib/contractor-store";
 import { getContractorSheet, getRecordType } from "@/lib/google-sheets";
 import { createRateLimiter, newId } from "@/lib/http";
 import { linkBase } from "@/lib/links";
-import { notifyOpportunities, type NotifyResult } from "@/lib/notify";
+import { notifyOpportunities, type NotifyItem, type NotifyResult } from "@/lib/notify";
 import { todayInIndia } from "@/lib/registration";
 import { fixturesEnabled } from "@/lib/fixtures";
-import { syncPairings } from "@/lib/telegram-pairing";
-import { telegramToken } from "@/lib/telegram";
+import { telegramToken, type SendError } from "@/lib/telegram";
+import { flowEnv } from "@/lib/telegram-bot";
+import { askContractors, type AskItem } from "@/lib/telegram-flow";
 
 // Every action here starts with requireAdmin(): a visitor who is not logged in
 // is sent to the login page and nothing is read or written. The record type
@@ -96,11 +97,27 @@ export async function createBidInviteAction(requestId: unknown, contractorId: un
 // are reported as "Not connected" and get nothing. New Start presses are read
 // first, so someone who just connected is included. Without a bot token the
 // message comes back as a preview, marked as not sent.
+function toNotifyItem(i: AskItem): NotifyItem {
+  const base = { contractorId: i.contractorId, name: i.name };
+  if (i.status === "asked") return { ...base, status: "sent" };
+  if (i.status === "not_connected") return { ...base, status: "not_connected" };
+  if (i.status === "already_asked") return { ...base, status: "skipped", reason: "already_asked" };
+  if (i.status === "failed") return { ...base, status: "failed", error: (i.detail as SendError | undefined) ?? "network" };
+  return { ...base, status: "skipped", reason: "invalid" };
+}
+
 export async function notifyViaTelegramAction(requestId: unknown, contractorIds: unknown): Promise<NotifyResult | BidFailure | { ok: false; error: "demo_only" }> {
   return guarded("notify", async () => {
     if (!fixturesEnabled()) return { ok: false as const, error: "demo_only" as const };
     const token = telegramToken();
-    if (token) await syncPairings(getContractorSheet(), { token, recordType: getRecordType() });
+    if (token) {
+      // The Telegram conversation (Yes / No buttons, then the quote), the same
+      // as a ticket raised on the builder page. Contractor IDs are not needed:
+      // every available, connected match is asked once.
+      const asked = await askContractors(getContractorSheet(), String(requestId), flowEnv(token));
+      if (!asked.ok) return { ok: false as const, error: asked.error === "real_blocked" ? ("real_blocked" as const) : ("invalid" as const) };
+      return { ok: true as const, items: asked.items.map(toNotifyItem) };
+    }
     return notifyOpportunities(
       getContractorSheet(),
       { requestId, contractorIds },

@@ -1,13 +1,12 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { validate, emptyValues, isValidIndianMobile, CONSENT_TEXT } from "../lib/registration.ts";
-const ok = { ...emptyValues, trade:"Masonry", area:"Baner", availability:"now", phone:"98765 43210", consent:true };
+const ok = { ...emptyValues, name:"Asha Patil", trade:"Masonry", area:"Baner", availability:"now", phone:"98765 43210", consent:true };
 const T = "2026-10-21";
 test("valid minimal", () => assert.deepEqual(validate(ok, T), {}));
 test("empty form flags required fields", () => {
   const e = validate(emptyValues, T);
-  for (const k of ["trade","area","availability","phone","consent"]) assert.ok(e[k], k);
-  assert.equal(e.name, undefined);
+  for (const k of ["name","trade","area","availability","phone","consent"]) assert.ok(e[k], k);
 });
 test("phones", () => {
   for (const p of ["9876543210","+91 98765 43210","+919876543210","91-98765-43210"]) assert.ok(isValidIndianMobile(p), p);

@@ -1,4 +1,5 @@
 import { SheetSetupError } from "@/lib/contractor-store";
+import { fixturesEnabled } from "@/lib/fixtures";
 import {
   getContractorSheet,
   getRecordType,
@@ -93,7 +94,7 @@ export async function POST(request: Request) {
     } catch {
       console.error("[requests] language_not_saved");
     }
-    return reply({ ok: true, recordType, language }, 200);
+    return reply({ ok: true, recordType, language, ...(fixturesEnabled() ? { localMode: true } : {}) }, 200);
   } catch (error) {
     const label =
       error instanceof NotConfiguredError

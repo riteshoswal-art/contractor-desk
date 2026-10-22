@@ -2,7 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import { PUNE_AREAS, TRADES } from "@/lib/registration";
+import { OTHER_AREA, PUNE_AREAS, TRADES } from "@/lib/registration";
 import { REQUEST_CONSENT_TEXT } from "@/lib/request";
 import { builderTelegramLinkAction, raiseTicketAction, registerBuilderAction, signOutBuilderAction } from "./actions";
 
@@ -143,7 +143,7 @@ export function SignOut() {
 
 // Step 3: raise a ticket. Saved with the same checks as the public request
 // form, then sent straight away to the available contractors on Telegram.
-const EMPTY_TICKET = { trade: "", area: "", description: "", startDate: "", durationDays: "", notes: "", consent: false };
+const EMPTY_TICKET = { trade: "", area: "", otherArea: "", description: "", startDate: "", durationDays: "", notes: "", consent: false };
 
 export function BuilderTicketForm({ today, connected }: { today: string; connected: boolean }) {
   const router = useRouter();
@@ -163,7 +163,9 @@ export function BuilderTicketForm({ today, connected }: { today: string; connect
     setDone("");
     try {
       const days = v.durationDays.trim() === "" ? null : Number(v.durationDays);
-      const r = await raiseTicketAction({ ...v, durationDays: days === null || Number.isNaN(days) ? null : days });
+      const { otherArea, ...rest } = v;
+      const area = v.area === OTHER_AREA ? otherArea : v.area;
+      const r = await raiseTicketAction({ ...rest, area, durationDays: days === null || Number.isNaN(days) ? null : days });
       if (r.ok) {
         setV(EMPTY_TICKET);
         setDone(
@@ -200,11 +202,20 @@ export function BuilderTicketForm({ today, connected }: { today: string; connect
         </label>
         <label className={label}>
           Site location (Pune locality)
-          <input className={field} list="pune-areas" value={v.area} onChange={(e) => set("area", e.target.value)} aria-invalid={Boolean(errors.area)} placeholder="e.g. Baner" />
-          <datalist id="pune-areas">{PUNE_AREAS.map((a) => <option key={a} value={a} />)}</datalist>
+          <select className={field} value={v.area} onChange={(e) => set("area", e.target.value)} aria-invalid={Boolean(errors.area)}>
+            <option value="">Choose…</option>
+            {PUNE_AREAS.map((a) => <option key={a}>{a}</option>)}
+            <option value={OTHER_AREA}>Other locality</option>
+          </select>
           <FieldError id="area" text={errors.area} />
         </label>
       </div>
+      {v.area === OTHER_AREA && (
+        <label className={label}>
+          Which locality?
+          <input className={field} value={v.otherArea} onChange={(e) => set("otherArea", e.target.value)} aria-invalid={Boolean(errors.area)} />
+        </label>
+      )}
       <label className={label}>
         Work description
         <textarea

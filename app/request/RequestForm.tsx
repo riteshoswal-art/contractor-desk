@@ -162,7 +162,8 @@ export default function RequestForm({ initialLanguage }: { initialLanguage?: Lan
 
       if (response.ok && result.ok === true) {
         setValues(emptyRequest);
-        setSavedAsTest(result.recordType === "TEST");
+        // The local data mode needs no "test record" warning on screen.
+        setSavedAsTest(result.recordType === "TEST" && !result.localMode);
         setTranslation(result.language?.saved ? (result.language.translation ?? null) : null);
         setStage("saved");
       } else if (result.error === "validation" && result.errors) {
