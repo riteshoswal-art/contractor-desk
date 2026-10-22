@@ -1,6 +1,14 @@
 import Link from "next/link";
 import {
+  CONFIRMATION_LABELS,
+  NOT_CONFIRMED_TEXT,
+  SOURCE_LABELS,
+  type Confirmation,
+  type ConfirmedStart,
+} from "@/lib/confirmation";
+import {
   EXCLUSION_LABELS,
+  START_NEEDS_CONFIRMATION,
   formatDate as fmt,
   type ExclusionReason,
   type MatchResult,
@@ -11,12 +19,64 @@ import {
 // else. It never shows phone numbers, and it never calls a candidate verified
 // or guaranteed available.
 
+// What the page knows about one candidate for THIS request, on top of the
+// matching rules. Everything is optional: with none of it the list looks
+// exactly as it did before confirmations existed.
+export type CandidateExtras = {
+  confirmation?: {
+    current: Confirmation | null;
+    state: ConfirmedStart;
+    history: Confirmation[];
+  };
+  slot?: React.ReactNode; // forms and bid information supplied by the page
+};
+
+function ConfirmationStatus({ info }: { info: NonNullable<CandidateExtras["confirmation"]> }) {
+  const { current, state, history } = info;
+  return (
+    <div className="mt-2 rounded-md bg-zinc-50 p-3 text-sm">
+      <p className="font-medium">
+        Confirmation for this request:{" "}
+        {current ? CONFIRMATION_LABELS[current.status] : "none recorded"}
+      </p>
+      {current && (
+        <p className="mt-1 text-zinc-700">
+          {SOURCE_LABELS[current.source]}, {fmt(current.recordedAt)}
+          {current.confirmedStartDate ? `. Date: ${fmt(current.confirmedStartDate)}` : ""}
+          {current.note ? `. Note: ${current.note}` : ""}
+        </p>
+      )}
+      {!state.confirmed && (
+        <p className="mt-1 text-zinc-700">{NOT_CONFIRMED_TEXT[state.reason]}</p>
+      )}
+      {history.length > 1 && (
+        <details className="mt-2">
+          <summary className="cursor-pointer text-blue-800">
+            History ({history.length} entries)
+          </summary>
+          <ol className="mt-1 list-decimal space-y-1 pl-5 text-zinc-700">
+            {history.map((h) => (
+              <li key={h.id}>
+                {CONFIRMATION_LABELS[h.status]}
+                {h.confirmedStartDate ? `, ${fmt(h.confirmedStartDate)}` : ""} — {fmt(h.recordedAt)} (
+                {h.source === "admin" ? "founder" : "contractor link"})
+              </li>
+            ))}
+          </ol>
+        </details>
+      )}
+    </div>
+  );
+}
+
 export default function MatchResults({
   result,
   request,
+  extras,
 }: {
   result: MatchResult;
   request: RequestRecord;
+  extras?: Record<string, CandidateExtras>;
 }) {
   const excludedTotal = Object.values(result.excluded).reduce((a, b) => a + b, 0);
   const excludedParts = (Object.keys(result.excluded) as ExclusionReason[])
@@ -62,8 +122,19 @@ export default function MatchResults({
           <p className="mt-4 text-sm font-medium">
             Showing {result.candidates.length} of {result.eligibleCount}{" "}
             potential match{result.eligibleCount === 1 ? "" : "es"}. Ordered by
-            recorded confirmation first, then most recent availability report.
+            start-date fit first (exact date, then 1 day later, then 2 days
+            later), then recorded confirmation, then most recent availability
+            report.
           </p>
+          {result.needsStartConfirmationCount > 0 && (
+            <p className="mt-2 rounded-md border border-amber-300 bg-amber-50 p-3 text-sm text-amber-950">
+              {result.needsStartConfirmationCount} of these{" "}
+              {result.needsStartConfirmationCount === 1 ? "is" : "are"}{" "}
+              labelled &ldquo;{START_NEEDS_CONFIRMATION}&rdquo;: their stated
+              start date is not the requested date (or is not recorded).
+              Confirm it with them before relying on it.
+            </p>
+          )}
           <ol className="mt-3 space-y-4">
             {result.candidates.map((c, i) => (
               <li
@@ -88,11 +159,38 @@ export default function MatchResults({
                   </span>
                 </div>
 
-                <p className="mt-2 text-sm font-medium">
-                  {c.evidence.kind === "founder_confirmed"
-                    ? `Potential match — availability recorded as confirmed by you on ${fmt(c.evidence.at)}`
-                    : "Potential match — availability not confirmed"}
-                </p>
+                {extras?.[c.contractorId]?.confirmation?.state.confirmed ? (
+                  // Only a confirmation recorded for THIS request, by the
+                  // contractor or by you, ever shows this.
+                  <p className="mt-2 text-sm font-medium">
+                    <span className="rounded bg-green-100 px-2 py-0.5 text-xs font-semibold text-green-900">
+                      Start date confirmed:{" "}
+                      {fmt(
+                        (extras[c.contractorId].confirmation!.state as { startDate: string }).startDate,
+                      )}
+                    </span>{" "}
+                    Potential match — confirmed for this request
+                  </p>
+                ) : c.startFit.label ? (
+                  // A near-date candidate is never shown as confirmed: even a
+                  // recorded confirmation was not about the requested date.
+                  <p className="mt-2 text-sm font-medium">
+                    <span className="rounded bg-amber-100 px-2 py-0.5 text-xs font-semibold text-amber-950">
+                      {c.startFit.label}
+                    </span>{" "}
+                    Potential match — not confirmed for the requested date
+                  </p>
+                ) : (
+                  <p className="mt-2 text-sm font-medium">
+                    {c.evidence.kind === "founder_confirmed"
+                      ? `Potential match — availability recorded as confirmed by you on ${fmt(c.evidence.at)}`
+                      : "Potential match — availability not confirmed"}
+                  </p>
+                )}
+
+                {extras?.[c.contractorId]?.confirmation && (
+                  <ConfirmationStatus info={extras[c.contractorId].confirmation!} />
+                )}
 
                 <h4 className="mt-3 text-sm font-semibold">Why this match</h4>
                 <ul className="mt-1 list-disc space-y-1 pl-5 text-sm">
@@ -113,6 +211,8 @@ export default function MatchResults({
                     </ul>
                   </>
                 )}
+
+                {extras?.[c.contractorId]?.slot}
 
                 <p className="mt-3 text-sm text-zinc-600">
                   Phone number: held back until you review a message.{" "}

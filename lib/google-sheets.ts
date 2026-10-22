@@ -156,6 +156,9 @@ export interface SheetsValuesApi {
     valueInputOption: string;
     requestBody: { values: string[][] };
   }): Promise<unknown>;
+  // Used only by the one-time setup step.
+  tabTitles?(spreadsheetId: string): Promise<string[]>;
+  addTab?(spreadsheetId: string, title: string): Promise<unknown>;
 }
 
 export function createSheet(
@@ -206,6 +209,17 @@ export function createSheet(
           requestBody: { values: [row] },
         });
       }),
+    ...(api.tabTitles
+      ? { listTabs: () => call(() => api.tabTitles!(spreadsheetId)) }
+      : {}),
+    ...(api.addTab
+      ? {
+          addTab: (title: string) =>
+            call(async () => {
+              await api.addTab!(spreadsheetId, title);
+            }),
+        }
+      : {}),
   };
 }
 
@@ -215,6 +229,18 @@ function valuesApiOf(client: sheets_v4.Sheets): SheetsValuesApi {
     batchGet: (params) => values.batchGet(params),
     append: (params) => values.append(params),
     update: (params) => values.update(params),
+    tabTitles: async (spreadsheetId) => {
+      const res = await client.spreadsheets.get({
+        spreadsheetId,
+        fields: "sheets.properties.title",
+      });
+      return (res.data.sheets ?? []).flatMap((s) => (s.properties?.title ? [s.properties.title] : []));
+    },
+    addTab: (spreadsheetId, title) =>
+      client.spreadsheets.batchUpdate({
+        spreadsheetId,
+        requestBody: { requests: [{ addSheet: { properties: { title } } }] },
+      }),
   };
 }
 

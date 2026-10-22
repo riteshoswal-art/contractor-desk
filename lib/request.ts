@@ -1,6 +1,7 @@
 // Rules for developer requests: what Gemini may return, what a saved request
 // must contain, and the Requests tab layout. Used by both the browser form and
 // the server, so nothing here may read secrets or call services.
+import { canonicalLocality } from "./language";
 import {
   PUNE_AREAS,
   TRADES,
@@ -78,7 +79,8 @@ const QUESTIONS: Record<ExtractionField, string> = {
   durationDays: "About how many days will the work take? (optional)",
 };
 
-const LOCALITY_PATTERN = /^[\p{L}\p{N}\s.,'()-]+$/u;
+// \p{M} (combining marks) is needed for Hindi and Marathi words such as बाणेर.
+const LOCALITY_PATTERN = /^[\p{L}\p{M}\p{N}\s.,'()-]+$/u;
 
 export function isValidLocality(value: string): boolean {
   const v = value.trim();
@@ -195,6 +197,8 @@ export function parseRequestSubmission(
     if (typeof v !== "string" || v.length > DESCRIPTION_MAX + 200) return null;
     values[key] = cleanText(v);
   }
+  // A known locality typed in Hindi or Marathi is stored with its English spelling.
+  values.area = canonicalLocality(values.area);
 
   const d = raw.durationDays;
   if (d !== undefined && d !== null) {

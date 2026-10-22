@@ -1,5 +1,7 @@
 // Options and validation rules for the contractor registration form.
-// This file has no imports so the rules can be tested on their own.
+// Its only import is the dependency-free language helper, so the rules can be
+// tested on their own.
+import { canonicalLocality } from "./language";
 
 export const TRADES = [
   "Masonry",
@@ -127,7 +129,7 @@ export function validate(
       errors.otherArea = "Please enter the Pune locality you serve.";
     } else if (other.length > 60) {
       errors.otherArea = "Locality must be 60 characters or fewer.";
-    } else if (!/^[\p{L}\p{N}\s.,'()-]+$/u.test(other)) {
+    } else if (!/^[\p{L}\p{M}\p{N}\s.,'()-]+$/u.test(other)) {
       errors.otherArea = "Use letters, numbers and basic punctuation only.";
     }
   } else if (!(PUNE_AREAS as readonly string[]).includes(values.area)) {
@@ -250,7 +252,9 @@ export function buildContractorRow(
   values: FormValues,
   meta: { id: string; recordType: RecordType; nowIso: string },
 ): string[] {
-  const area = values.area === OTHER_AREA ? values.otherArea : values.area;
+  // A known locality typed in Hindi or Marathi is stored with its English
+  // spelling, so matching compares one spelling. Anything else is kept as typed.
+  const area = values.area === OTHER_AREA ? canonicalLocality(values.otherArea) : values.area;
   const cells: Record<(typeof CONTRACTOR_HEADERS)[number], string> = {
     contractor_id: meta.id,
     record_type: meta.recordType,

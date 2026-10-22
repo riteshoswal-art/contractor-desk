@@ -5,6 +5,9 @@ import {
   NotConfiguredError,
 } from "@/lib/google-sheets";
 import { createRateLimiter, newId, reply, sameOrigin } from "@/lib/http";
+import { saveRequestLanguage } from "@/lib/language-store";
+import { DEFAULT_LANGUAGE, parseLanguage, type LanguageCode } from "@/lib/language";
+import { getTranslationProvider, normalizeToEnglish, type TranslationStatus } from "@/lib/translation";
 import { todayInIndia } from "@/lib/registration";
 import { parseRequestSubmission, validateRequest } from "@/lib/request";
 import { saveRequest } from "@/lib/request-store";
@@ -40,6 +43,16 @@ export async function POST(request: Request) {
     return reply({ ok: false, error: "invalid" }, 400);
   }
 
+  // The language the form was shown in. Missing means English; anything that is
+  // not a supported language is refused rather than guessed.
+  let preferredLanguage: LanguageCode = DEFAULT_LANGUAGE;
+  const rawLanguage = (body as Record<string, unknown>).preferredLanguage;
+  if (rawLanguage !== undefined) {
+    const language = parseLanguage(rawLanguage);
+    if (!language) return reply({ ok: false, error: "invalid" }, 400);
+    preferredLanguage = language;
+  }
+
   const errors = validateRequest(parsed.values, todayInIndia());
   if (Object.keys(errors).length > 0) {
     return reply({ ok: false, error: "validation", errors }, 400);
@@ -47,12 +60,40 @@ export async function POST(request: Request) {
 
   const recordType = getRecordType();
   try {
-    await saveRequest(getContractorSheet(), parsed.values, {
-      id: newId("R"),
-      recordType,
-      nowIso: new Date().toISOString(),
-    });
-    return reply({ ok: true, recordType }, 200);
+    const id = newId("R");
+    const nowIso = new Date().toISOString();
+    await saveRequest(getContractorSheet(), parsed.values, { id, recordType, nowIso });
+
+    // The original text is already saved, exactly as written. Now record the
+    // language and the English version, if a real translation exists. With no
+    // translation provider connected the status is "pending" and the English
+    // field stays empty: untranslated text is never passed off as English.
+    let language: { saved: boolean; translation: TranslationStatus | null } = {
+      saved: false,
+      translation: null,
+    };
+    try {
+      const provider = getTranslationProvider();
+      const description = await normalizeToEnglish(parsed.values.description, preferredLanguage, provider);
+      const notes = await normalizeToEnglish(parsed.values.notes, preferredLanguage, provider);
+      const status = await saveRequestLanguage(
+        getContractorSheet(),
+        {
+          requestId: id,
+          preferredLanguage,
+          description: parsed.values.description,
+          notes: parsed.values.notes,
+          descriptionNormalized: description,
+          notesNormalized: notes,
+        },
+        { recordType, now: new Date(nowIso) },
+        () => newId("L"),
+      );
+      language = { saved: true, translation: status };
+    } catch {
+      console.error("[requests] language_not_saved");
+    }
+    return reply({ ok: true, recordType, language }, 200);
   } catch (error) {
     const label =
       error instanceof NotConfiguredError

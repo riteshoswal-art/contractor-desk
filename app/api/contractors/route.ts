@@ -5,6 +5,8 @@ import {
   NotConfiguredError,
 } from "@/lib/google-sheets";
 import { createRateLimiter, newId, reply, sameOrigin } from "@/lib/http";
+import { saveContractorLanguage } from "@/lib/language-store";
+import { DEFAULT_LANGUAGE, parseLanguage, type LanguageCode } from "@/lib/language";
 import { parseSubmission, todayInIndia, validate } from "@/lib/registration";
 
 const MAX_BODY_BYTES = 5_000;
@@ -38,6 +40,16 @@ export async function POST(request: Request) {
     return reply({ ok: false, error: "invalid" }, 400);
   }
 
+  // The language the form was shown in. Missing means English; anything that is
+  // not a supported language is refused rather than guessed.
+  let preferredLanguage: LanguageCode = DEFAULT_LANGUAGE;
+  const rawLanguage = (body as Record<string, unknown>).preferredLanguage;
+  if (rawLanguage !== undefined) {
+    const language = parseLanguage(rawLanguage);
+    if (!language) return reply({ ok: false, error: "invalid" }, 400);
+    preferredLanguage = language;
+  }
+
   const errors = validate(parsed.values, todayInIndia());
   if (Object.keys(errors).length > 0) {
     return reply({ ok: false, error: "validation", errors }, 400);
@@ -45,11 +57,24 @@ export async function POST(request: Request) {
 
   const recordType = getRecordType();
   try {
-    await saveContractor(getContractorSheet(), parsed.values, {
-      id: newId("C"),
-      recordType,
-      nowIso: new Date().toISOString(),
-    });
+    const id = newId("C");
+    const nowIso = new Date().toISOString();
+    const outcome = await saveContractor(getContractorSheet(), parsed.values, { id, recordType, nowIso });
+    // The language choice is a separate record, written only after the
+    // registration itself is safely saved. If it cannot be written the
+    // registration still stands; only a short label is logged.
+    if (outcome === "saved") {
+      try {
+        await saveContractorLanguage(
+          getContractorSheet(),
+          { contractorId: id, preferredLanguage },
+          { recordType, now: new Date(nowIso) },
+          () => newId("L"),
+        );
+      } catch {
+        console.error("[contractors] language_not_saved");
+      }
+    }
     // "saved" and "duplicate" look identical to the caller on purpose, so the
     // form can never be used to find out who is already registered.
     return reply({ ok: true, recordType }, 200);

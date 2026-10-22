@@ -107,7 +107,7 @@ test("nothing says verified or guaranteed; no phone data in results", () => {
   const text = JSON.stringify(r);
   assert.ok(!/verified|guarantee/i.test(text), "forbidden wording");
   assert.ok(!/phone|\+91|\d{10}/i.test(text), "phone-like data present");
-  for (const c of r.candidates) assert.deepEqual(Object.keys(c).sort(), ["contractorId","evidence","missing","name","reasons","recordType","serviceAreas","trade"]);
+  for (const c of r.candidates) assert.deepEqual(Object.keys(c).sort(), ["contractorId","evidence","missing","name","reasons","recordType","serviceAreas","startFit","trade"]);
 });
 test("matching never mutates the input records", () => {
   const cs = [C(), C({ trade:"Electrical" })]; const before = JSON.stringify(cs); run(cs); assert.equal(JSON.stringify(cs), before);

@@ -14,6 +14,10 @@ export interface ContractorSheet {
   append(range: string, row: string[]): Promise<void>;
   // Overwrites exactly one existing row, e.g. "Outcomes!A5:O5".
   update(range: string, row: string[]): Promise<void>;
+  // Only used by the one-time setup step (lib/sheet-setup.ts): list the tabs
+  // that exist and add a new empty one. The app itself never calls these.
+  listTabs?(): Promise<string[]>;
+  addTab?(title: string): Promise<void>;
 }
 
 // The Sheet's first row does not match what the code expects.

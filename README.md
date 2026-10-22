@@ -130,6 +130,22 @@ npm run dev
 
 Open http://localhost:3000. Everything created locally is labelled **TEST**.
 
+### 5. One-time Sheet setup for the newer tabs
+
+Newer features keep their data in **new tabs**, so the original Contractors,
+Requests and Outcomes tabs and their headers stay exactly as they are. A new tab
+must exist in your Sheet before its feature can save anything. Until then the
+app keeps working and shows a notice where the feature would appear.
+
+```bash
+npm run sheet:setup             # report only: changes nothing
+npm run sheet:setup -- --apply  # create the missing tabs and their header rows
+```
+
+The setup only **creates** missing tabs. It never edits, clears or deletes an
+existing tab, and it reports (without changing) any existing tab whose headers
+differ. Tabs defined so far: `Confirmations` and `Languages`.
+
 ## Using it for the experiment
 
 1. Register contractors (`/register`) only **after they consent**.
@@ -139,6 +155,105 @@ Open http://localhost:3000. Everything created locally is labelled **TEST**.
    and press send yourself.
 5. **Record outcome** afterwards: only what you know. Opening the link is not
    recorded as sent; a reply is not confirmed availability.
+
+## Start dates and availability confirmations
+
+**Flexible start dates.** A contractor registers as "available now" or
+"available from a date". Matching keeps trade and locality exactly as required
+and treats only the date flexibly:
+
+| Contractor's stated start vs the requested date | Result |
+|---|---|
+| "Available now", or from a date on or before the requested date (including 1 or 2 days before) | Matches. Ranked first. |
+| 1 day after | Shown, labelled **Start date needs confirmation**, ranked after exact-date contractors |
+| 2 days after | Same label, ranked after the 1-day group |
+| 3 or more days after | Left out ("cannot start within 2 days of the requested date") |
+| "From a date" but no usable date on record | Shown only as **Start date needs confirmation**, ranked last |
+
+Ranking is applied **before** the five-candidate display limit, so a near-date
+contractor can never push an exact-date contractor off the list. Stale
+registrations, missing consent and deletion requests still exclude as before.
+(Because a contractor gives one date, "from 25 Oct" is read as able to start on
+26 Oct, as before. This rule is in `lib/match.ts`; the constant
+`START_FLEX_DAYS` sets the 2-day window.)
+
+**Confirmations belong to one request.** On a request's page, each potential
+contractor has a "Record what they said about this request" form, for after you
+speak to them. It stores one of: awaiting response; interested, availability
+unconfirmed; available for the requested date; available for an alternative
+date (with that date); unavailable. Every change is a **new row** in the
+`Confirmations` tab (who recorded it, when, and the note), so the tab is an audit
+trail; the latest row for that request and contractor is the current status.
+
+- Only "available" statuses with a date inside the 2-day window count as
+  confirmed. Awaiting, interested-only and unavailable never do.
+- A confirmation for one request is never reused for another request.
+- Sending a message, opening a link or a reply does **not** create a
+  confirmation: only you record it.
+- Only a current potential match can be given a confirmation, so a
+  confirmation can never rescue a trade or locality mismatch.
+- The older `last_availability_confirmed_at` column is a general contractor-level
+  freshness date. It does **not** confirm a start date for any request.
+
+## Languages (English, Hindi, Marathi)
+
+Both public screens, the contractor registration (`/register`) and the developer
+request (`/request`), can be used in **English, Hindi (हिन्दी) or Marathi (मराठी)**.
+A selector with three large buttons sits near the top of each screen. A link can
+open a screen in a language directly, for example `/register?lang=mr`, which is
+handy to put in a WhatsApp message. The choice is also remembered on that phone.
+
+**What is translated, and how.**
+
+| Item | How | Needs a service? |
+|---|---|---|
+| Headings, instructions, labels, buttons, success and error messages | Written translations in `lib/i18n.ts` | No |
+| Validation messages (for example "Please enter a valid date.") | Looked up by exact wording, so the rules and their tests are unchanged | No |
+| Trade, locality and availability choices | The label is translated; the value stored underneath stays English, so matching still works | No |
+| Known Pune localities typed in Hindi/Marathi (बाणेर, कोथरूड ...) | Stored with the English spelling (Baner, Kothrud ...) so matching compares one spelling. Any other locality is kept exactly as typed. | No |
+| **Free text a person types** (the request description, notes) | **Kept exactly as written. An English version exists only if a real translation provider produced it.** | **Yes, and none is connected** |
+
+**Free text is not translated yet, and the app says so.** No free, permitted
+translation method is available: the Gemini key is on an unpaid tier where text
+may be reviewed and used by Google, so real people's text must not be sent to it,
+and a paid service needs your approval first. So a Hindi or Marathi description
+is saved as written and marked **pending**; the English field stays empty. The
+app never copies untranslated text into the English field and never labels it
+English. (Devanagari text typed on the English form is also not treated as
+English.) A later provider is added by implementing the small `TranslationProvider`
+interface in `lib/translation.ts`, after cost and privacy are approved.
+
+**Where it is stored.** The `Languages` tab (new, so your existing tabs are
+untouched) gets one row per registration and per request:
+`preferred_language` (the language the form and the consent were shown in, also
+the language for messages to that person), `source_language`, `original_text`,
+`english_text`, `original_notes`, `english_notes`, `translation_status`
+(`not_needed`, `pending`, `translated`, `failed`) and `translation_method`.
+The original text also stays in the Requests tab exactly as before. If the
+Languages tab is missing, a registration or request is still saved; only the
+language record is skipped (the reply to a request then says
+`language.saved: false`, and a short label is logged). Create the tab with
+`npm run sheet:setup -- --apply`.
+On a request's admin page you see the language chosen, the translation status,
+and the English version only if one really exists.
+
+**Consent.** The consent a person reads is shown in their language, followed by
+the **English wording, which is the wording recorded** (with its version). The
+consent versions and recorded text are unchanged.
+
+> **Have the Hindi and Marathi wording checked by native speakers**, especially
+> the two consent texts, before real contractors or developers rely on it. It was
+> drafted for this project and has not been reviewed.
+
+**Adding another language.** Add it to `LANGUAGES` in `lib/language.ts` and add
+one more dictionary in `lib/i18n.ts`. The project will not build until every
+string exists, and the tests check the new language the same way.
+
+**Known limits.** The admin pages are in English. Names are never translated.
+Notes and descriptions typed in Latin letters on the Hindi/Marathi form (for
+example "Hinglish") are not assumed to be English either, so they also stay
+pending. Messages to contractors are not translated yet (WhatsApp is a later
+phase).
 
 ## Manual procedures (no screens for these yet)
 

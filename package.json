@@ -7,6 +7,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
+    "sheet:setup": "node --import ./tests/register.mjs scripts/setup-sheet.mjs",
     "test": "node --import ./tests/register.mjs --test \"tests/**/*.test.mjs\""
   },
   "dependencies": {

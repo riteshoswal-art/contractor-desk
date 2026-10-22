@@ -6,6 +6,12 @@ import { CONSENT_VERSION, PUNE_AREAS, type RecordType } from "./registration";
 export const MAX_CANDIDATES = 5;
 export const STALE_AFTER_DAYS = 14;
 
+// How far (in calendar days) a contractor's start date may fall AFTER the
+// requested start date and still be shown, as a "Start date needs
+// confirmation" candidate. Trade and locality are never relaxed.
+export const START_FLEX_DAYS = 2;
+export const START_NEEDS_CONFIRMATION = "Start date needs confirmation";
+
 // Consent wordings a contractor may have agreed to. Add a version here only
 // after checking that the new wording still covers sharing with developers.
 export const ACCEPTED_CONSENT_VERSIONS: readonly string[] = [CONSENT_VERSION];
@@ -56,8 +62,21 @@ export const EXCLUSION_LABELS: Record<ExclusionReason, string> = {
   trade_mismatch: "different trade",
   area_mismatch: "does not serve this locality",
   unavailable: "reports being unavailable",
-  starts_too_late: "cannot start by the requested date",
+  starts_too_late: `cannot start within ${START_FLEX_DAYS} days of the requested date`,
   stale_availability: "availability information is out of date",
+};
+
+// How a contractor's stated start fits the requested start date.
+//  on_date       says "available now", or "from" a date on or before the request
+//                (the stated availability covers the requested date)
+//  near_date     starts 1 to START_FLEX_DAYS days AFTER the requested date
+//  date_unknown  says "available from a date" but no usable date is recorded
+//  not_checked   the request has no start date, so timing was not checked
+// near_date and date_unknown are labelled "Start date needs confirmation".
+export type StartFit = {
+  kind: "on_date" | "near_date" | "date_unknown" | "not_checked";
+  offsetDays: number | null; // days after the requested date (near_date only)
+  label: string | null;
 };
 
 export type Candidate = {
@@ -67,6 +86,7 @@ export type Candidate = {
   trade: string;
   serviceAreas: string[];
   evidence: { kind: "founder_confirmed" | "self_reported"; at: string };
+  startFit: StartFit;
   reasons: string[];
   missing: string[];
 };
@@ -75,6 +95,7 @@ export type MatchResult = {
   recordType: RecordType;
   checked: number; // contractors in this environment that were considered
   eligibleCount: number; // how many passed every rule
+  needsStartConfirmationCount: number; // of those, how many carry the label
   candidates: Candidate[]; // at most MAX_CANDIDATES
   excluded: Record<ExclusionReason, number>; // counts only, never names
   requestIncomplete: boolean;
@@ -94,6 +115,24 @@ export function formatDate(value: string): string {
     month: "short",
     year: "numeric",
   }).format(date);
+}
+
+// "YYYY-MM-DD" -> whole days since 1970-01-01, or null if it is not a real date.
+// Plain calendar arithmetic: no time zones, so "tomorrow" is always +1.
+export function dayNumber(value: string): number | null {
+  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value);
+  if (!m) return null;
+  const [y, mo, d] = [Number(m[1]), Number(m[2]), Number(m[3])];
+  const ms = Date.UTC(y, mo - 1, d);
+  const back = new Date(ms);
+  if (back.getUTCFullYear() !== y || back.getUTCMonth() !== mo - 1 || back.getUTCDate() !== d) {
+    return null; // e.g. 2026-02-31
+  }
+  return Math.round(ms / DAY_MS);
+}
+
+function plural(n: number, word: string): string {
+  return `${n} ${word}${n === 1 ? "" : "s"}`;
 }
 
 function parseTime(value: string): number | null {
@@ -170,13 +209,15 @@ export function matchContractors(
     recordType: options.envType,
     checked: 0,
     eligibleCount: 0,
+    needsStartConfirmationCount: 0,
     candidates: [],
     excluded,
     requestIncomplete: !request.trade || !request.area,
   };
   if (result.requestIncomplete) return result;
 
-  const eligible: (Candidate & { sortTime: number })[] = [];
+  const eligible: (Candidate & { sortTime: number; fitRank: number })[] = [];
+  const requestDay = dayNumber(request.startDate);
 
   for (const c of contractors) {
     // Records from the other environment are never considered or counted.
@@ -207,14 +248,30 @@ export function matchContractors(
       excluded.unavailable += 1; // "unavailable" or anything unrecognised
       continue;
     }
-    if (
-      c.availability === "from_date" &&
-      request.startDate &&
-      /^\d{4}-\d{2}-\d{2}$/.test(c.earliestStart) &&
-      c.earliestStart > request.startDate
-    ) {
-      excluded.starts_too_late += 1;
-      continue;
+    // How does their stated start fit the requested date? Only the DATE is
+    // flexible: trade and locality were already required above. A contractor
+    // who says "from <date>" is available on every day from that date, so a
+    // date on or before the request covers it. A date up to START_FLEX_DAYS
+    // days after the request is kept but labelled; anything later is out.
+    const contractorDay = c.availability === "from_date" ? dayNumber(c.earliestStart) : null;
+    let startFit: StartFit;
+    if (c.availability === "now") {
+      startFit = { kind: "on_date", offsetDays: null, label: null };
+    } else if (contractorDay === null) {
+      // "Available from a date", but the date is missing or not a real date.
+      startFit = { kind: "date_unknown", offsetDays: null, label: START_NEEDS_CONFIRMATION };
+    } else if (requestDay === null) {
+      startFit = { kind: "not_checked", offsetDays: null, label: null };
+    } else {
+      const offset = contractorDay - requestDay; // days AFTER the requested start
+      if (offset <= 0) {
+        startFit = { kind: "on_date", offsetDays: null, label: null };
+      } else if (offset <= START_FLEX_DAYS) {
+        startFit = { kind: "near_date", offsetDays: offset, label: START_NEEDS_CONFIRMATION };
+      } else {
+        excluded.starts_too_late += 1;
+        continue;
+      }
     }
     const evidence = latestEvidence(c, now);
     if (!evidence || (now - evidence.time) / DAY_MS > staleDays) {
@@ -230,13 +287,18 @@ export function matchContractors(
     ];
     if (c.availability === "now") {
       reasons.push("Said they are available now.");
-    } else if (request.startDate && c.earliestStart) {
+    } else if (startFit.kind === "on_date") {
+      const early = Math.max(0, requestDay! - contractorDay!);
       reasons.push(
-        `Said they are available from ${formatDate(c.earliestStart)}, on or before the requested start of ${formatDate(request.startDate)}.`,
+        `Said they are available from ${formatDate(c.earliestStart)}, on or before the requested start of ${formatDate(request.startDate)}${early > 0 ? ` (${plural(early, "day")} before)` : ""}.`,
+      );
+    } else if (startFit.kind === "near_date") {
+      reasons.push(
+        `Said they are available from ${formatDate(c.earliestStart)}, ${plural(startFit.offsetDays!, "day")} after the requested start of ${formatDate(request.startDate)}. That is inside the ${START_FLEX_DAYS}-day flexible window, but it is not the requested date.`,
       );
     } else {
       reasons.push(
-        c.earliestStart
+        contractorDay !== null
           ? `Said they are available from ${formatDate(c.earliestStart)}.`
           : "Said they are available from a later date (date not recorded).",
       );
@@ -254,8 +316,18 @@ export function matchContractors(
     if (!request.startDate) {
       missing.push("The request has no start date, so timing was not checked.");
     }
+    if (startFit.kind === "near_date") {
+      missing.push(
+        `${START_NEEDS_CONFIRMATION}: they have not said they can start on ${formatDate(request.startDate)}. Do not treat them as available on that date until you confirm it with them.`,
+      );
+    }
     if (c.availability === "from_date" && !c.earliestStart) {
       missing.push("Their earliest start date is not recorded.");
+    }
+    if (startFit.kind === "date_unknown") {
+      missing.push(
+        `${START_NEEDS_CONFIRMATION}: no usable start date is on record, so the requested date cannot be assumed.`,
+      );
     }
     if (!c.name) missing.push("No name was given.");
     if (request.trade === "Other") {
@@ -272,16 +344,27 @@ export function matchContractors(
       trade: c.trade,
       serviceAreas: c.serviceAreas,
       evidence: { kind: evidence.kind, at: evidence.at },
+      startFit,
       reasons,
       missing,
       sortTime: evidence.time,
+      // 0 = covers the requested date, 1-2 = that many days late, 3 = date unknown
+      fitRank:
+        startFit.kind === "near_date"
+          ? startFit.offsetDays!
+          : startFit.kind === "date_unknown"
+            ? START_FLEX_DAYS + 1
+            : 0,
     });
   }
 
-  // Ordering rule (no score): founder-confirmed first, then the most recently
+  // Ordering rule (no score): contractors whose availability covers the
+  // requested date first, then 1 day late, then 2 days late, then unknown
+  // dates; within each group founder-confirmed first, then the most recently
   // reported or confirmed, then by ID so the order is stable.
   eligible.sort(
     (a, b) =>
+      a.fitRank - b.fitRank ||
       Number(b.evidence.kind === "founder_confirmed") -
         Number(a.evidence.kind === "founder_confirmed") ||
       b.sortTime - a.sortTime ||
@@ -289,6 +372,7 @@ export function matchContractors(
   );
 
   result.eligibleCount = eligible.length;
+  result.needsStartConfirmationCount = eligible.filter((c) => c.startFit.label !== null).length;
   result.candidates = eligible
     .slice(0, max)
     .map((c) => ({
@@ -298,6 +382,7 @@ export function matchContractors(
       trade: c.trade,
       serviceAreas: c.serviceAreas,
       evidence: c.evidence,
+      startFit: c.startFit,
       reasons: c.reasons,
       missing: c.missing,
     }));

@@ -212,7 +212,9 @@ test("request save: a valid request is stored as a TEST row with consent and sta
   setContractorSheetForTests(sheet);
   const res = await requestsRoute.POST(jsonRequest(validRequest(), { ip: ip() }));
   assert.equal(res.status, 200);
-  assert.deepEqual(await res.json(), { ok: true, recordType: "TEST" });
+  // This Sheet has no Languages tab, so the request is saved but its language
+  // record is honestly reported as not saved.
+  assert.deepEqual(await res.json(), { ok: true, recordType: "TEST", language: { saved: false, translation: null } });
   const row = sheet.appended[0][1];
   assert.equal(sheet.appended[0][0], "Requests!A1");
   assert.match(cell(row, REQUEST_HEADERS, "request_id"), /^R-[A-Z2-9]{8}$/);

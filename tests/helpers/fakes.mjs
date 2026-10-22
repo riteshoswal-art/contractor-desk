@@ -13,11 +13,18 @@ export function makeSheet({
   requests = [],
   outcomes = [],
   failWith = null, // make every call throw this error
+  tables = [], // extra tabs: [{ tab, headers }] from the app's table definitions
 } = {}) {
   const tabs = {
     Contractors: [[...CONTRACTOR_HEADERS], ...contractors],
     Requests: [[...REQUEST_HEADERS], ...requests],
     Outcomes: [[...OUTCOME_HEADERS], ...outcomes],
+  };
+  for (const t of tables) tabs[t.tab] = [[...t.headers]];
+  const needTab = (name) => {
+    // Google answers 400 when a tab does not exist.
+    if (!tabs[name]) throw Object.assign(new Error("Unable to parse range"), { status: 400 });
+    return tabs[name];
   };
   return {
     tabs,
@@ -31,7 +38,7 @@ export function makeSheet({
         // Understands "Tab!A1:H", "Tab!I1:I1" (columns) and "Tab!1:1" (whole rows).
         const m = /^(\w+)!(?:([A-Z])(\d+):([A-Z])(\d*)|(\d+):(\d+))$/.exec(range);
         if (!m) throw new Error(`fake sheet cannot read range ${range}`);
-        const grid = tabs[m[1]];
+        const grid = needTab(m[1]);
         const trim = (cells) => {
           while (cells.length && cells[cells.length - 1] === "") cells.pop();
           return cells;
@@ -49,13 +56,23 @@ export function makeSheet({
     async append(range, row) {
       if (failWith) throw failWith;
       this.appended.push([range, row]);
-      tabs[range.split("!")[0]].push(row);
+      needTab(range.split("!")[0]).push(row);
+    },
+    // Only for the one-time setup tests.
+    async listTabs() {
+      if (failWith) throw failWith;
+      return Object.keys(tabs);
+    },
+    async addTab(title) {
+      if (failWith) throw failWith;
+      if (tabs[title]) throw new Error("tab already exists");
+      tabs[title] = [];
     },
     async update(range, row) {
       if (failWith) throw failWith;
       this.updated.push([range, row]);
       const n = Number(/(\d+):/.exec(range)[1]);
-      tabs[range.split("!")[0]][n - 1] = row;
+      needTab(range.split("!")[0])[n - 1] = row;
     },
   };
 }

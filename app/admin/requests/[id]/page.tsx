@@ -1,16 +1,27 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Suspense } from "react";
+import {
+  confirmedStart,
+  historyOf,
+  latestByPair,
+  pairKey,
+  type Confirmation,
+} from "@/lib/confirmation";
+import { loadConfirmations } from "@/lib/confirmation-store";
 import { SheetSetupError } from "@/lib/contractor-store";
 import {
   getContractorSheet,
   getRecordType,
   NotConfiguredError,
 } from "@/lib/google-sheets";
+import { latestLanguageByEntity, loadLanguageRecords, type LanguageRecord } from "@/lib/language-store";
+import { languageName } from "@/lib/language";
 import { formatDate, matchContractors } from "@/lib/match";
 import { loadContractors, loadRequests } from "@/lib/records";
 import AdminShell from "../../AdminShell";
-import MatchResults from "../MatchResults";
+import MatchResults, { type CandidateExtras } from "../MatchResults";
+import ConfirmationForm from "./ConfirmationForm";
 
 export const metadata: Metadata = { title: "Request | Contractor Desk" };
 
@@ -26,6 +37,37 @@ export default function RequestDetailPage(
   );
 }
 
+const TRANSLATION_TEXT: Record<string, string> = {
+  not_needed: "Written in English, so no translation is needed.",
+  pending:
+    "English version pending: no translation service is connected. The text above is exactly what the developer wrote.",
+  translated: "Translated to English automatically. Check it against the original text above.",
+  failed: "The English translation did not work. Read the original text above.",
+};
+
+// What language the developer chose and whether an English version really
+// exists. The original text above is never replaced.
+function LanguageNote({ record }: { record: LanguageRecord }) {
+  return (
+    <div className="mt-2 rounded-md border border-zinc-300 p-3 text-sm">
+      <p>
+        <span className="font-medium">Language chosen:</span> {languageName(record.preferredLanguage)}.{" "}
+        {TRANSLATION_TEXT[record.translationStatus] ?? "Translation status not recorded."}
+      </p>
+      {record.englishText && (
+        <p className="mt-2 whitespace-pre-wrap">
+          <span className="font-medium">English version ({record.translationMethod}):</span> {record.englishText}
+        </p>
+      )}
+      {record.englishNotes && (
+        <p className="mt-2 whitespace-pre-wrap">
+          <span className="font-medium">English version of the notes:</span> {record.englishNotes}
+        </p>
+      )}
+    </div>
+  );
+}
+
 async function RequestDetail({
   params,
 }: {
@@ -36,6 +78,9 @@ async function RequestDetail({
 
   let request;
   let result;
+  let confirmations: Confirmation[] = [];
+  let confirmationsReady = true;
+  let languageRecord: LanguageRecord | undefined;
   try {
     const sheet = getContractorSheet();
     const requests = await loadRequests(sheet);
@@ -44,6 +89,22 @@ async function RequestDetail({
     if (request) {
       const contractors = await loadContractors(sheet);
       result = matchContractors(request, contractors, { envType: recordType });
+      try {
+        confirmations = await loadConfirmations(sheet, recordType);
+      } catch (error) {
+        // The new tab may not exist yet. Matching still works without it.
+        if (!(error instanceof SheetSetupError)) throw error;
+        confirmationsReady = false;
+        console.error("[admin/match] confirmations_tab_not_set_up");
+      }
+      try {
+        const records = await loadLanguageRecords(sheet, recordType);
+        languageRecord = latestLanguageByEntity(records).get(`request|${request.id}`);
+      } catch (error) {
+        // The Languages tab may not exist yet; the page simply shows nothing about language.
+        if (!(error instanceof SheetSetupError)) throw error;
+        console.error("[admin/match] languages_tab_not_set_up");
+      }
     }
   } catch (error) {
     const label =
@@ -75,6 +136,27 @@ async function RequestDetail({
     );
   }
 
+  const latest = latestByPair(confirmations);
+  const extras: Record<string, CandidateExtras> = {};
+  for (const c of result.candidates) {
+    extras[c.contractorId] = {
+      confirmation: confirmationsReady
+        ? {
+            current: latest.get(pairKey(request.id, c.contractorId)) ?? null,
+            state: confirmedStart(latest.get(pairKey(request.id, c.contractorId)), request),
+            history: historyOf(confirmations, request.id, c.contractorId),
+          }
+        : undefined,
+      slot: confirmationsReady ? (
+        <ConfirmationForm
+          requestId={request.id}
+          contractorId={c.contractorId}
+          requestHasDate={Boolean(request.startDate)}
+        />
+      ) : undefined,
+    };
+  }
+
   return (
     <>
       <Link href="/admin/requests" className="mt-6 inline-block text-sm text-blue-800 underline">
@@ -100,8 +182,17 @@ async function RequestDetail({
       <p className="mt-3 whitespace-pre-wrap rounded-md bg-zinc-50 p-3 text-sm text-zinc-800">
         {request.description}
       </p>
+      {languageRecord && <LanguageNote record={languageRecord} />}
 
-      <MatchResults result={result} request={request} />
+      {!confirmationsReady && (
+        <p role="status" className="mt-6 rounded-md border border-amber-300 bg-amber-50 p-3 text-sm text-amber-950">
+          Availability confirmations are not set up in the Sheet yet (the
+          &ldquo;Confirmations&rdquo; tab is missing), so statuses cannot be
+          shown or recorded. Matching below still works. See the README, section
+          &ldquo;One-time Sheet setup&rdquo;.
+        </p>
+      )}
+      <MatchResults result={result} request={request} extras={extras} />
     </>
   );
 }
