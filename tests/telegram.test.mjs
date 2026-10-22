@@ -45,8 +45,8 @@ beforeEach(() => resetNotifyGuardForTests());
 
 // ============================ configuration ============================
 test("settings come only from the server environment; missing and malformed values are named, the token never is", () => {
-  assert.deepEqual(telegramConfig({}), { configured: false, missing: ["TELEGRAM_BOT_TOKEN", "TELEGRAM_DEMO_CHAT_ID"], invalid: [] });
-  assert.deepEqual(telegramConfig({ TELEGRAM_BOT_TOKEN: "nope", TELEGRAM_DEMO_CHAT_ID: "@someone" }), { configured: false, missing: [], invalid: ["TELEGRAM_BOT_TOKEN", "TELEGRAM_DEMO_CHAT_ID"] });
+  assert.deepEqual(telegramConfig({}), { configured: false, missing: ["TELEGRAM_BOT_TOKEN", "TELEGRAM_FOUNDER_CHAT_ID"], invalid: [] });
+  assert.deepEqual(telegramConfig({ TELEGRAM_BOT_TOKEN: "nope", TELEGRAM_DEMO_CHAT_ID: "@someone" }), { configured: false, missing: [], invalid: ["TELEGRAM_BOT_TOKEN", "TELEGRAM_FOUNDER_CHAT_ID"] });
   assert.deepEqual(telegramConfig({ TELEGRAM_BOT_TOKEN: ` ${TOKEN} `, TELEGRAM_DEMO_CHAT_ID: ` ${CHAT}` }), CFG);
   const shown = describeConfig(telegramConfig({ TELEGRAM_BOT_TOKEN: TOKEN, TELEGRAM_DEMO_CHAT_ID: CHAT }));
   assert.deepEqual(shown, { configured: true, chatIdMasked: "••••••321", missing: [], invalid: [] });
@@ -186,4 +186,15 @@ test("the Telegram admin page is inside the admin guard and never prints the tok
   const page = fs.readFileSync(new URL("../app/admin/telegram/page.tsx", import.meta.url), "utf8");
   assert.ok(page.includes("<AdminShell>"));
   assert.ok(!/\{[^}]*TELEGRAM_BOT_TOKEN[^}]*\}/.test(page.replace(/Boolean\(\(process\.env\.TELEGRAM_BOT_TOKEN \?\? ""\)\.trim\(\)\)/, "")), "the token value is never rendered");
+});
+
+test("in the live demo, a link built from localhost uses the laptop's Wi-Fi address so a phone can open it; never elsewhere", () => {
+  const demo = { CONTRACTOR_DESK_FIXTURES: "1", NODE_ENV: "development", CONTRACTOR_DESK_DEV_ORIGINS: "10.182.58.53,192.168.1.9" };
+  assert.equal(linkBase("localhost:3100", demo), "http://10.182.58.53:3100");
+  assert.equal(linkBase("127.0.0.1:3100", demo), "http://10.182.58.53:3100");
+  assert.equal(linkBase("192.168.1.9:3100", demo), "http://192.168.1.9:3100", "an address already usable is kept");
+  assert.equal(linkBase("localhost:3100", { ...demo, CONTRACTOR_DESK_DEV_ORIGINS: "8.8.8.8,not-an-ip" }), "http://localhost:3100", "only private addresses are ever substituted");
+  for (const off of [{ ...demo, CONTRACTOR_DESK_FIXTURES: undefined }, { ...demo, NODE_ENV: "production" }, { ...demo, VERCEL: "1" }, {}]) {
+    assert.equal(linkBase("localhost:3100", off), "http://localhost:3100", JSON.stringify(off));
+  }
 });

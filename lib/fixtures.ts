@@ -11,6 +11,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { CONFIRMATION_TABLE } from "./confirmation";
 import { demoState, emptyDemoState, onDemoChange, setDemoState, type DemoState } from "./demo-store";
+import { ensureDemoSeed } from "./demo-seed";
 import { createMemorySheet, type MemorySheet } from "./memory-sheet";
 import { REQUIRED_TABLES } from "./sheet-setup";
 import { OUTCOME_HEADERS } from "./outcome";
@@ -110,13 +111,18 @@ export function fixtureSheet(): MemorySheet {
   const holder = globalThis as unknown as Record<string, MemorySheet | undefined>;
   if (holder[KEY]) return holder[KEY];
   const file = (process.env.CONTRACTOR_DESK_FIXTURE_FILE ?? "").trim();
-  if (!file) return (holder[KEY] = buildFixtureSheet());
+  if (!file) {
+    const plain = buildFixtureSheet();
+    ensureDemoSeed(plain.tabs); // the labelled live-demo contractors (lib/demo-seed.ts)
+    return (holder[KEY] = plain);
+  }
 
   const saved = loadSnapshot(file);
   if (saved) setDemoState(saved.demo);
   // Tabs added since the file was saved (for example a newer feature) are created empty.
   const fresh = buildFixtureSheet().tabs;
   const tabs = saved ? { ...fresh, ...saved.tabs } : fresh;
+  ensureDemoSeed(tabs); // adds the labelled live-demo contractors if missing (lib/demo-seed.ts)
   const save = () => {
     try {
       saveSnapshot(file, sheet.tabs);

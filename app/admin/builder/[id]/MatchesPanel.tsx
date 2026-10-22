@@ -33,8 +33,8 @@ const REASON: Record<string, string> = {
   not_found: "not found",
 };
 const PROBLEM: Record<string, string> = {
-  demo_only: "This works only in the live demo (npm run demo).",
-  no_token: "The Telegram bot is not set up yet (TELEGRAM_BOT_TOKEN). See the Telegram (demo) page.",
+  demo_only: "This works only in the local data mode.",
+  no_token: "The Telegram bot is not set up yet (TELEGRAM_BOT_TOKEN). See the Telegram page.",
   bot_unreachable: "Could not reach the Telegram bot. Check the internet connection and the token.",
   not_found: "That contractor was not found.",
   too_many_requests: "Too many clicks just now. Please wait a minute.",
@@ -111,7 +111,7 @@ export default function MatchesPanel({ requestId, rows, botReady, builderAlertsR
           1. Matched contractors and Telegram notifications
         </h2>
         <p className="text-xs text-zinc-600">
-          Bot: {botReady ? "set up" : "not set up"} · Builder bid alerts: {builderAlertsReady ? "on" : "off (TELEGRAM_DEMO_CHAT_ID missing)"}
+          Bot: {botReady ? "set up" : "not set up"} · Builder bid alerts: {builderAlertsReady ? "on" : "off (TELEGRAM_FOUNDER_CHAT_ID missing)"}
         </p>
       </div>
       <p className="mt-1 text-sm text-zinc-700">
@@ -181,6 +181,12 @@ export default function MatchesPanel({ requestId, rows, botReady, builderAlertsR
               return (
                 <li key={i.contractorId}>
                   <span className="font-medium">{i.name || i.contractorId}</span>: <span className={`rounded px-1.5 py-0.5 text-xs font-semibold ${n.tone}`}>{n.text}</span>
+                  {i.status === "sent" && i.link && (
+                    <details className="mt-1">
+                      <summary className="cursor-pointer text-blue-800">The link that was sent (for your eyes only)</summary>
+                      <input readOnly value={i.link} onFocus={(e) => e.currentTarget.select()} className="mt-1 block w-full rounded border border-zinc-300 bg-white px-2 py-1 font-mono text-xs" aria-label={`Link sent to ${i.name}`} />
+                    </details>
+                  )}
                   {i.status === "preview" && i.preview && (
                     <details className="mt-1">
                       <summary className="cursor-pointer text-blue-800">Message preview</summary>

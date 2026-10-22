@@ -19,7 +19,7 @@ import { loadJobWorkspace } from "../../requests/[id]/job-data";
 import LiveRefresh from "./LiveRefresh";
 import MatchesPanel, { type MatchRow } from "./MatchesPanel";
 
-export const metadata: Metadata = { title: "Ticket | Builder demo | Contractor Desk" };
+export const metadata: Metadata = { title: "Ticket | Contractor Desk" };
 
 export default function TicketPage(props: PageProps<"/admin/builder/[id]">) {
   return (
@@ -34,7 +34,7 @@ export default function TicketPage(props: PageProps<"/admin/builder/[id]">) {
 const ALERT_TEXT: Record<string, { text: string; tone: string }> = {
   sent: { text: "Builder alerted on Telegram", tone: "bg-green-100 text-green-900" },
   failed: { text: "Builder Telegram alert failed (the bid is saved)", tone: "bg-red-100 text-red-900" },
-  not_configured: { text: "Builder alert not sent: TELEGRAM_DEMO_CHAT_ID not set (the bid is saved)", tone: "bg-amber-100 text-amber-900" },
+  not_configured: { text: "Builder alert not sent: TELEGRAM_FOUNDER_CHAT_ID not set (the bid is saved)", tone: "bg-amber-100 text-amber-900" },
 };
 
 // Everything the ticket view shows, read fresh on every request (and on every
@@ -98,7 +98,7 @@ async function Ticket({ params, searchParams }: { params: PageProps<"/admin/buil
     return (
       <div className="mt-6 space-y-3">
         <p role="status" className="rounded-md border border-zinc-300 bg-zinc-50 p-4 text-sm">That ticket was not found among the {recordType} records.</p>
-        <Link href="/admin/builder" className="text-sm text-blue-800 underline">&larr; Builder demo</Link>
+        <Link href="/admin/builder" className="text-sm text-blue-800 underline">&larr; Tickets</Link>
       </div>
     );
   }
@@ -107,7 +107,7 @@ async function Ticket({ params, searchParams }: { params: PageProps<"/admin/buil
 
   return (
       <div className="mt-6">
-        <Link href="/admin/builder" className="text-sm text-blue-800 underline">&larr; Builder demo</Link>
+        <Link href="/admin/builder" className="text-sm text-blue-800 underline">&larr; Tickets</Link>
         {isNew && (
           <p role="status" className="mt-4 rounded-md border border-green-300 bg-green-50 p-3 text-sm font-medium text-green-900">
             Ticket raised. Reference: <span className="font-mono">{request.id}</span>. No contractor has been contacted yet.
@@ -133,7 +133,7 @@ async function Ticket({ params, searchParams }: { params: PageProps<"/admin/buil
 
         {bidWorkspace.missingTabs.length > 0 && (
           <p role="status" className="mt-6 rounded-md border border-amber-300 bg-amber-50 p-3 text-sm text-amber-950">
-            Bidding is not set up in this Sheet (missing {bidWorkspace.missingTabs.join(", ")}). Use the live demo (npm run demo).
+            Bidding is not set up in this Sheet (missing {bidWorkspace.missingTabs.join(", ")}). Use the local data mode.
           </p>
         )}
 

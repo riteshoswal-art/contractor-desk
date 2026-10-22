@@ -1,7 +1,7 @@
 "use server";
 
 import { requireAdmin } from "@/lib/admin-auth";
-import { demoState } from "@/lib/demo-store";
+import { botListening, demoState } from "@/lib/demo-store";
 import { getRecordType } from "@/lib/google-sheets";
 import { createRateLimiter } from "@/lib/http";
 import { recentChats, sendDemoMessage, telegramConfig, type SendResult, type SendError } from "@/lib/telegram";
@@ -23,8 +23,8 @@ export async function sendTelegramTestAction(): Promise<TestSendResult> {
   const result = await sendDemoMessage(
     telegramConfig(),
     [
-      "DEMO · Contractor Desk",
-      "Test message from the admin page. If you can read this, the demo Telegram channel works.",
+      "Contractor Desk · Test message",
+      "Test message from the operator page. If you can read this, the Telegram connection works.",
       `Data mode on the server: ${getRecordType()}.`,
       "No contractor was contacted.",
     ].join("\n"),
@@ -40,6 +40,8 @@ export async function findTelegramChatsAction(): Promise<ChatsResult> {
   if (tooOften("telegram-admin")) return { ok: false, error: "too_many_requests" };
   const token = (process.env.TELEGRAM_BOT_TOKEN ?? "").trim();
   if (!token) return { ok: false, error: "no_token" };
+  // While the bot listener runs it is the only reader of Telegram updates.
+  if (botListening()) return { ok: true, chats: demoState().recentChats };
   const result = await recentChats(token);
   if (!result.ok) console.error(`[admin/telegram] find_chats ${result.error}`);
   // Start presses the demo has already read (they are no longer in Telegram's

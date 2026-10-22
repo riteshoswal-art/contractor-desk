@@ -446,11 +446,11 @@ test("the bid panel offers the Telegram demo only for TEST data, says plainly wh
   const { panel } = await panelFor(sheet);
   const render = (telegram) => text(renderToStaticMarkup(createElement(BidPanel, { panel, today: dayStr(0), telegram })));
   const off = render({ configured: false, testMode: true });
-  assert.ok(off.includes("Notify by Telegram (demo)") && off.includes("Notify all eligible matches (2)"));
+  assert.ok(off.includes("Notify by Telegram") && off.includes("Notify all eligible matches (2)"));
   assert.ok(off.includes("Telegram is not fully set up yet") && off.includes("previews"));
   assert.ok(!/Delivered/.test(off));
   const on = render({ configured: true, testMode: true });
   assert.ok(on.includes("connected their own Telegram") && on.includes("only their own one-time bid link") && !on.includes("not fully set up"));
   const real = render({ configured: true, testMode: false });
-  assert.ok(real.includes("REAL data, so the Telegram demo is switched off") && !real.includes("Notify all eligible"));
+  assert.ok(real.includes("REAL data, so Telegram notifications are switched off") && !real.includes("Notify all eligible"));
 });

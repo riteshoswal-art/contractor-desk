@@ -6,6 +6,7 @@ import { getDict } from "@/lib/i18n";
 import { LANGUAGES } from "@/lib/language";
 import { describeInvite } from "@/lib/review-store";
 import ReviewForm from "./ReviewForm";
+import SiteHeader from "../../SiteHeader";
 
 // A private link: it must not be indexed, cached or shared by search engines.
 export const metadata: Metadata = {
@@ -15,11 +16,14 @@ export const metadata: Metadata = {
 
 export default function ReviewPage(props: PageProps<"/review/[token]">) {
   return (
-    <main className="mx-auto w-full max-w-xl flex-1 px-4 py-8 sm:py-12">
-      <Suspense fallback={<p className="text-sm">Loading…</p>}>
-        <ReviewContent params={props.params} />
-      </Suspense>
-    </main>
+    <>
+      <SiteHeader />
+      <main className="mx-auto w-full max-w-xl flex-1 px-4 py-8 sm:py-12">
+        <Suspense fallback={<p className="text-sm">Loading…</p>}>
+          <ReviewContent params={props.params} />
+        </Suspense>
+      </main>
+    </>
   );
 }
 

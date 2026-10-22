@@ -93,7 +93,7 @@ export default function BidPanel({ panel, today, telegram }: { panel: BidPanelDa
       } else {
         setMessage(
           result.error === "real_blocked" || result.error === "demo_only"
-            ? "Telegram notifications work only in the live demo (npm run demo, TEST data). Nothing was created or sent."
+            ? "Telegram notifications work only in the local data mode (TEST data). Nothing was created or sent."
             : (PROBLEMS[result.error] ?? PROBLEMS.service_error),
         );
       }
@@ -186,9 +186,9 @@ export default function BidPanel({ panel, today, telegram }: { panel: BidPanelDa
 
         {state === "open" && (
           <div className="space-y-2 rounded-md border border-sky-200 bg-sky-50 p-3">
-            <p className="font-medium">Notify by Telegram (demo)</p>
+            <p className="font-medium">Notify by Telegram</p>
             {!telegram.testMode ? (
-              <p className="text-zinc-700">This server uses REAL data, so the Telegram demo is switched off.</p>
+              <p className="text-zinc-700">This server uses REAL data, so Telegram notifications are switched off.</p>
             ) : (
               <>
                 <p className="text-zinc-700">

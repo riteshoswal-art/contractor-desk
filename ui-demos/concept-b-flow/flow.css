@@ -1,0 +1,91 @@
+/* Concept B, full flow: the extra pieces the shared Concept B styles do not have
+   (step tabs, ticket progress, and the Telegram conversation in a phone). */
+
+.flow-tabs { position: sticky; top: 0; z-index: 20; background: rgba(255,255,255,.92); -webkit-backdrop-filter: blur(16px); backdrop-filter: blur(16px); border-bottom: 1px solid var(--line); }
+.flow-tabs-inner { max-width: 1180px; margin: 0 auto; padding: 10px 20px; display: flex; gap: 6px; overflow-x: auto; scrollbar-width: none; }
+.flow-tabs a { flex: none; text-decoration: none; color: var(--muted); font-size: 0.85rem; font-weight: 600; padding: 8px 14px; border-radius: 999px; border: 1px solid var(--line); background: #fff; }
+.flow-tabs a .n { color: var(--accent); margin-right: 6px; }
+.flow-tabs a.on { background: var(--ink); color: #fff; border-color: var(--ink); }
+.flow-tabs a.on .n { color: #ffb39e; }
+
+.flow-page { max-width: 1180px; margin: 0 auto; padding: 48px 20px 96px; }
+.flow-split { display: grid; grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr); gap: 56px; align-items: start; }
+@media (max-width: 900px) { .flow-split { grid-template-columns: minmax(0, 1fr); gap: 32px; } }
+.flow-copy { display: grid; gap: 16px; position: sticky; top: 90px; }
+@media (max-width: 900px) { .flow-copy { position: static; } }
+.flow-copy .h-display-sm { margin: 0; letter-spacing: -0.03em; line-height: 1.05; }
+.flow-copy .lead { margin: 0; }
+.next-link { display: inline-flex; align-items: center; gap: 8px; font-weight: 600; color: var(--ink); text-decoration: none; border-bottom: 2px solid var(--accent); padding-bottom: 2px; width: fit-content; }
+
+/* website card */
+.web { border: 1px solid var(--line); border-radius: var(--radius-xl); overflow: hidden; background: #fff; box-shadow: var(--shadow-lg); }
+.web-bar { display: flex; align-items: center; gap: 8px; padding: 12px 16px; border-bottom: 1px solid var(--line); background: var(--surface-2); }
+.web-bar i { width: 10px; height: 10px; border-radius: 50%; background: var(--line-strong); }
+.web-bar span { margin-left: 10px; font-size: 0.78rem; color: var(--muted); background: #fff; border: 1px solid var(--line); border-radius: 999px; padding: 4px 12px; }
+.web-body { padding: 28px; display: grid; gap: 22px; }
+@media (max-width: 560px) { .web-body { padding: 20px; } }
+
+.step-block { border: 1px solid var(--line); border-radius: var(--radius-lg); padding: 22px; display: grid; gap: 14px; }
+.step-block.current { border: 2px solid var(--ink); }
+.step-block.done { background: var(--surface-2); border-color: transparent; }
+.step-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.step-head h3 { margin: 0; font-family: var(--font-display); font-size: 1.15rem; letter-spacing: -0.02em; }
+.step-tag { font-size: 0.72rem; font-weight: 700; letter-spacing: .05em; text-transform: uppercase; color: var(--accent); }
+.form-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
+@media (max-width: 560px) { .form-grid { grid-template-columns: minmax(0, 1fr); } }
+.signed-in { display: flex; align-items: center; justify-content: space-between; gap: 12px; font-size: 0.9rem; }
+.signed-in .who { display: flex; align-items: center; gap: 10px; }
+.signed-in .avatar { width: 34px; height: 34px; }
+
+/* ticket progress */
+.ticket { border: 1px solid var(--line); border-radius: var(--radius-lg); padding: 20px; display: grid; gap: 14px; }
+.ticket-top { display: flex; justify-content: space-between; gap: 12px; align-items: baseline; flex-wrap: wrap; }
+.ticket-top b { font-family: var(--font-display); font-size: 1.1rem; letter-spacing: -0.02em; }
+.ticket-top .mono { color: var(--muted); font-size: 0.8rem; }
+.track { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; }
+.track div { display: grid; gap: 6px; font-size: 0.78rem; color: var(--muted); font-weight: 600; }
+.track div::before { content: ""; height: 4px; border-radius: 4px; background: var(--line); }
+.track div.on { color: var(--ink); }
+.track div.on::before { background: var(--accent); }
+.counts { display: flex; gap: 22px; flex-wrap: wrap; }
+.counts div { display: grid; }
+.counts b { font-family: var(--font-display); font-size: 1.6rem; font-weight: 500; letter-spacing: -0.03em; line-height: 1.1; }
+.counts span { font-size: 0.72rem; color: var(--muted); font-weight: 600; text-transform: uppercase; letter-spacing: .04em; }
+.live { display: inline-flex; align-items: center; gap: 8px; font-size: 0.8rem; color: var(--muted); }
+.live::before { content: ""; width: 8px; height: 8px; border-radius: 50%; background: #2fb45a; box-shadow: 0 0 0 4px #e3f5e8; }
+
+/* Telegram in a phone */
+.tg-stage { display: flex; gap: 28px; justify-content: center; flex-wrap: wrap; }
+.tg-phone { width: 340px; max-width: 100%; border-radius: 44px; background: #0e0e0e; padding: 10px; box-shadow: var(--shadow-lg); }
+.tg-screen { border-radius: 36px; overflow: hidden; background: #e9eef2; height: 640px; display: grid; grid-template-rows: auto auto 1fr auto; }
+.tg-status { display: flex; justify-content: space-between; padding: 12px 24px 4px; font-size: 0.75rem; font-weight: 600; background: #fff; }
+.tg-head { display: flex; align-items: center; gap: 10px; padding: 8px 14px 12px; background: #fff; border-bottom: 1px solid #e6e6e6; }
+.tg-head .bot { width: 36px; height: 36px; border-radius: 50%; background: var(--ink); color: #fff; display: grid; place-items: center; font-size: 0.8rem; font-weight: 700; }
+.tg-head b { font-size: 0.92rem; display: block; }
+.tg-head span { font-size: 0.75rem; color: var(--muted); }
+.tg-head .who { margin-left: auto; font-size: 0.7rem; font-weight: 700; color: var(--accent); text-transform: uppercase; letter-spacing: .04em; }
+.tg-chat { overflow-y: auto; padding: 14px 10px; display: flex; flex-direction: column; gap: 8px; }
+.bubble { max-width: 86%; padding: 9px 12px; border-radius: 16px; font-size: 0.86rem; line-height: 1.42; white-space: pre-line; box-shadow: 0 1px 1px rgba(0,0,0,.06); }
+.bubble.bot { background: #fff; border-bottom-left-radius: 6px; align-self: flex-start; }
+.bubble.me { background: #e1f7d5; border-bottom-right-radius: 6px; align-self: flex-end; }
+.bubble b { font-weight: 600; }
+.kb { align-self: flex-start; width: 86%; display: grid; gap: 4px; margin-top: -2px; }
+.kb-row { display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; gap: 4px; }
+.kb button { font: inherit; font-size: 0.82rem; font-weight: 600; border: 0; border-radius: 10px; padding: 9px 6px; background: rgba(255,255,255,.75); color: #2a7ab0; cursor: pointer; }
+.kb button:hover { background: #fff; }
+.kb button[disabled] { opacity: .45; cursor: default; }
+.toast-tg { align-self: center; background: rgba(0,0,0,.7); color: #fff; font-size: 0.75rem; padding: 5px 12px; border-radius: 999px; }
+.tg-input { display: flex; gap: 8px; padding: 10px; background: #fff; border-top: 1px solid #e6e6e6; }
+.tg-input input { flex: 1; border: 1px solid #e3e3e3; border-radius: 999px; padding: 10px 14px; font: inherit; font-size: 0.88rem; }
+.tg-input button { border: 0; border-radius: 50%; width: 40px; height: 40px; background: var(--ink); color: #fff; cursor: pointer; }
+.tg-input input:disabled, .tg-input button:disabled { opacity: .5; }
+.tg-hint { text-align: center; font-size: 0.8rem; color: var(--muted); margin-top: 12px; }
+
+/* operator */
+.op-row { display: grid; grid-template-columns: minmax(0, 1.4fr) auto auto; gap: 14px; align-items: center; padding: 14px 18px; border-top: 1px solid var(--line); }
+.op-row:first-child { border-top: 0; }
+@media (max-width: 640px) { .op-row { grid-template-columns: minmax(0, 1fr); gap: 8px; } }
+.op-list { border: 1px solid var(--line); border-radius: var(--radius-lg); overflow: hidden; }
+.health { display: flex; gap: 12px; align-items: center; padding: 16px 18px; border-radius: var(--radius-lg); background: var(--ok-bg); color: var(--ok-ink); font-size: 0.9rem; }
+.health b { font-weight: 600; }
+.link-box { display: flex; gap: 8px; align-items: center; background: var(--surface-2); border-radius: var(--radius-md); padding: 10px 12px; font-size: 0.78rem; word-break: break-all; }

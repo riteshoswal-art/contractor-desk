@@ -7,7 +7,7 @@
 //     change, so a rehearsal survives a restart. `npm run demo:reset` deletes it.
 //   - Fixture mode refuses to switch on in a production build, on Vercel, or
 //     with REAL data.
-//   - Telegram: set TELEGRAM_BOT_TOKEN (and TELEGRAM_DEMO_CHAT_ID for the
+//   - Telegram: set TELEGRAM_BOT_TOKEN (and TELEGRAM_FOUNDER_CHAT_ID for the
 //     builder's alerts) in .env.local. See /admin/telegram.
 import { spawn } from "node:child_process";
 import os from "node:os";

@@ -463,7 +463,7 @@ Sheet do **not** appear here: participants register again on the demo server.
 4. The contractor opens their link and submits one bid (the normal bid form and
    rules). Their confirmation appears on the form.
 5. For each **newly saved** bid, the builder's Telegram chat
-   (`TELEGRAM_DEMO_CHAT_ID`) gets an alert: ticket, contractor, quote and unit,
+   (`TELEGRAM_FOUNDER_CHAT_ID`) gets an alert: ticket, contractor, quote and unit,
    provisional status, time, and a link to the ticket. Duplicates, rejected bids
    and page refreshes do not alert. If the alert fails the bid is still saved,
    and the ticket shows the failure.
@@ -488,7 +488,7 @@ Connections are stored only in the demo data, never in the Sheet.
 3. In `.env.local` add a line `TELEGRAM_BOT_TOKEN=` followed by the token. Save.
    Stop the demo (Ctrl+C) and run `npm run demo` again.
 4. Log in, open **Telegram (demo)**, press **Find my chat ID**, and add
-   `TELEGRAM_DEMO_CHAT_ID=` followed by your number. Save and restart again.
+   `TELEGRAM_FOUNDER_CHAT_ID=` followed by your number. Save and restart again.
 5. Press **Send a test message** and check your phone.
 
 **Phones and Wi-Fi.** Phones must be on the same Wi-Fi as the laptop and use the

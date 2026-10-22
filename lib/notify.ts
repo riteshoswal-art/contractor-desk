@@ -61,7 +61,7 @@ export function composeOpportunity(args: {
   expiresAt: string;
 }): string {
   const lines = [
-    "Contractor Desk (demo) · New job opportunity",
+    "Contractor Desk · New job opportunity",
     `Hi ${args.name || "there"}, a job matches your registration.`,
     "",
     `${args.trade} in ${args.area}, Pune`,

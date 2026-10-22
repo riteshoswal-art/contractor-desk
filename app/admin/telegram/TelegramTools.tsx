@@ -27,7 +27,7 @@ export default function TelegramTools({ configured, hasToken }: { configured: bo
     setSendMsg(null);
     try {
       const r = await sendTelegramTestAction();
-      setSendMsg(r.ok ? { ok: true, text: `Delivered to the demo chat (Telegram message ${r.messageId}). Check Telegram.` } : { ok: false, text: say(r.error) });
+      setSendMsg(r.ok ? { ok: true, text: `Delivered to the founder chat (Telegram message ${r.messageId}). Check Telegram.` } : { ok: false, text: say(r.error) });
     } catch {
       setSendMsg({ ok: false, text: "Something went wrong. Nothing was sent." });
     }
@@ -57,7 +57,7 @@ export default function TelegramTools({ configured, hasToken }: { configured: bo
         <h2 className="text-base font-semibold">Find your chat ID</h2>
         <p className="text-sm text-zinc-700">
           After you press <strong>Start</strong> in your bot in Telegram, this lists the accounts that recently wrote to it, so you
-          can copy your own number into <code>TELEGRAM_DEMO_CHAT_ID</code>. Nothing is stored.
+          can copy your own number into <code>TELEGRAM_FOUNDER_CHAT_ID</code>. Nothing is stored.
         </p>
         <button type="button" className={quietButton} disabled={!hasToken || busy !== ""} onClick={find}>
           {busy === "find" ? "Checking…" : "Find my chat ID"}
@@ -77,7 +77,7 @@ export default function TelegramTools({ configured, hasToken }: { configured: bo
 
       <div className="space-y-2 rounded-md border border-zinc-300 p-4">
         <h2 className="text-base font-semibold">Send a test message</h2>
-        <p className="text-sm text-zinc-700">Sends one short test message to the demo chat only. Nothing is sent unless you press the button.</p>
+        <p className="text-sm text-zinc-700">Sends one short test message to the founder chat only. Nothing is sent unless you press the button.</p>
         <button type="button" className={button} disabled={!configured || busy !== ""} onClick={send}>
           {busy === "send" ? "Sending…" : "Send a test message"}
         </button>

@@ -8,7 +8,7 @@ import { todayInIndia } from "@/lib/registration";
 import AdminShell from "../AdminShell";
 import TicketForm from "./TicketForm";
 
-export const metadata: Metadata = { title: "Builder demo | Contractor Desk" };
+export const metadata: Metadata = { title: "Tickets | Contractor Desk" };
 
 export default function BuilderPage() {
   return (
@@ -36,10 +36,10 @@ async function BuilderHome() {
   return (
     <div className="mt-6 space-y-6">
       <div>
-        <h1 className="text-2xl font-semibold tracking-tight">Builder demo</h1>
+        <h1 className="text-2xl font-semibold tracking-tight">Tickets</h1>
         <p className="mt-2 text-sm leading-6 text-zinc-700">
-          A builder&apos;s job ticket, from request to chosen contractor. There are no builder accounts yet: for this demo the founder
-          raises the ticket on the builder&apos;s behalf, and the builder&apos;s Telegram chat receives an alert for every new bid.
+          Raise a ticket on a builder&apos;s behalf (for example after a phone call) and follow it from request to chosen contractor.
+          Builders can also raise tickets themselves on the builder page.
         </p>
       </div>
       <TicketForm today={todayInIndia()} />

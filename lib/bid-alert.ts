@@ -5,7 +5,7 @@
 // refresh never produces an alert. Each bid ID is alerted at most once. The bid
 // is never touched here: if Telegram fails, the bid stays saved and the failure
 // is recorded for the builder view. TEST records only. The destination is the
-// builder's demo chat (TELEGRAM_DEMO_CHAT_ID), never a contractor.
+// founder's chat (TELEGRAM_FOUNDER_CHAT_ID), never a contractor.
 import { formatBidPrice } from "./bid";
 import { loadBids } from "./bid-store";
 import type { ContractorSheet } from "./contractor-store";
@@ -30,7 +30,7 @@ export function composeBidAlert(args: {
   link: string;
 }): string {
   return [
-    "Contractor Desk (demo) · New bid received",
+    "Contractor Desk · New bid received",
     `Ticket: ${args.requestId} (${args.trade} in ${args.area})`,
     `Contractor: ${args.contractorName}`,
     `Quote: ${args.price}`,

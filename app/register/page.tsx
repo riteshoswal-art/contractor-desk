@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import RegistrationForm from "./RegistrationForm";
+import SiteHeader from "../SiteHeader";
 
 export const metadata: Metadata = {
   title: "Contractor registration | Contractor Desk",
@@ -9,8 +10,11 @@ export const metadata: Metadata = {
 // be shown in the language the person chooses.
 export default function RegisterPage() {
   return (
-    <main className="mx-auto w-full max-w-xl flex-1 px-4 py-8 sm:py-12">
-      <RegistrationForm />
-    </main>
+    <>
+      <SiteHeader active="contractor" />
+      <main className="mx-auto w-full max-w-xl flex-1 px-4 py-8 sm:py-12">
+        <RegistrationForm />
+      </main>
+    </>
   );
 }

@@ -118,7 +118,8 @@ test("the fixture is all made up and all TEST, and each server gets one shared c
   assert.ok(!/@|ritesh|oswal|forge27|mesaschool/i.test(text));
   for (const c of await loadContractors(sheet)) assert.equal(c.recordType, "TEST");
   assert.ok((await loadRequests(sheet)).every((r) => r.recordType === "TEST"));
-  assert.ok(/fixture/i.test((await loadRequests(sheet))[0].description));
+  const phone = sheet.tabs.Contractors[0].indexOf("phone");
+  for (const r of sheet.tabs.Contractors.slice(1)) assert.match(r[phone], /^\+9190000\d{5}$/, "every phone number is a made-up 90000-series number");
 });
 
 test("the fixture shows each matching case: an exact match, a near-date match needing confirmation, and a non-match", async () => {
