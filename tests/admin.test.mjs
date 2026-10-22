@@ -23,6 +23,7 @@ import {
   setCookie,
   setRequestHeader,
 } from "./stubs/next-headers.mjs";
+import { connectionCalls, onConnection, resetConnectionCalls } from "./stubs/next-server.mjs";
 import { contractorRow, makeSheet, requestRow } from "./helpers/fakes.mjs";
 
 const PASSWORD = "synthetic-test-password";
@@ -94,6 +95,35 @@ test("a login cookie is private to the server and expires", async () => {
   assert.equal(opts.path, "/");
   assert.equal(opts.maxAge, 8 * 60 * 60);
   assert.equal(await isAdmin(), true);
+});
+
+// Regression: Next.js refuses Date.now() while prerendering a page. The login
+// check must wait for a real request (connection()) before it reads the clock,
+// whenever it has a cookie to check.
+test("the session check waits for a real request before reading the time", async () => {
+  const realNow = Date.now;
+  const events = [];
+  Date.now = () => { events.push("clock"); return realNow(); };
+  try {
+    resetConnectionCalls();
+    onConnection(() => events.push("connection"));
+    setCookie(COOKIE, token(inOneHour()));
+    events.length = 0; // only watch what isAdmin() itself does (the line above reads the clock too)
+    assert.equal(await isAdmin(), true);
+    assert.equal(connectionCalls(), 1, "connection() was not awaited");
+    assert.deepEqual(events, ["connection", "clock"], "the clock must be read only after connection()");
+
+    // No cookie, or a malformed one: nothing depends on the time, so no wait is needed.
+    resetRequestState();
+    resetConnectionCalls();
+    assert.equal(await isAdmin(), false);
+    setCookie(COOKIE, "garbage");
+    assert.equal(await isAdmin(), false);
+    assert.equal(connectionCalls(), 0);
+  } finally {
+    Date.now = realNow;
+    resetConnectionCalls();
+  }
 });
 
 test("the cookie is marked Secure everywhere except localhost", async () => {

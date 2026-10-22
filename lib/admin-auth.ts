@@ -4,6 +4,7 @@
 import { createHash, createHmac, timingSafeEqual } from "node:crypto";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
+import { connection } from "next/server";
 
 const COOKIE_NAME = "cd_admin";
 const SESSION_SECONDS = 8 * 60 * 60;
@@ -64,7 +65,11 @@ export async function isAdmin(): Promise<boolean> {
   if (!cfg || !token) return false;
   const [expiry, signature, ...rest] = token.split(".");
   if (!expiry || !signature || rest.length > 0) return false;
-  if (!/^\d+$/.test(expiry) || Number(expiry) < Date.now() / 1000) return false;
+  if (!/^\d+$/.test(expiry)) return false;
+  // The current time changes on every request, so Next must not read it while
+  // prerendering a page. connection() waits for a real request first.
+  await connection();
+  if (Number(expiry) < Date.now() / 1000) return false;
   const expected = Buffer.from(sign(cfg.secret, expiry));
   const given = Buffer.from(signature);
   return expected.length === given.length && timingSafeEqual(expected, given);

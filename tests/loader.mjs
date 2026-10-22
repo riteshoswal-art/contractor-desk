@@ -6,8 +6,9 @@
 //  - understands the "@/..." shortcut used in the app;
 //  - turns .tsx page components into plain JavaScript using the TypeScript
 //    package that is already installed;
-//  - swaps three Next.js-only modules for small stand-ins (tests/stubs), so
-//    cookies, redirects and links can be tested without a running website.
+//  - swaps four Next.js-only modules for small stand-ins (tests/stubs), so
+//    cookies, redirects, links and request-time waiting can be tested without
+//    a running website.
 import { existsSync, readFileSync, statSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
@@ -19,6 +20,7 @@ const STUBS = {
   "next/link": "stubs/next-link.mjs",
   "next/headers": "stubs/next-headers.mjs",
   "next/navigation": "stubs/next-navigation.mjs",
+  "next/server": "stubs/next-server.mjs",
 };
 
 function findFile(base) {
