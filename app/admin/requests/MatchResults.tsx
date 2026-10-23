@@ -227,14 +227,14 @@ export default function MatchResults({
 
                 <p className="small muted" style={{ margin: "14px 0 0", paddingTop: 12, borderTop: "1px solid var(--line)" }}>
                   Phone number: held back until you review a message.{" "}
-                  <Link
+                  <Link prefetch={false}
                     href={`/admin/requests/${request.id}/contact/${c.contractorId}`}
                     className="font-semibold underline underline-offset-2" style={{ color: "var(--ink)" }}
                   >
                     Prepare a message
                   </Link>
                   {" · "}
-                  <Link
+                  <Link prefetch={false}
                     href={`/admin/requests/${request.id}/outcome/${c.contractorId}`}
                     className="font-semibold underline underline-offset-2" style={{ color: "var(--ink)" }}
                   >

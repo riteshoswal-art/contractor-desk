@@ -162,36 +162,76 @@ export interface SheetsValuesApi {
   addTab?(spreadsheetId: string, title: string): Promise<unknown>;
 }
 
+// Google allows about 60 Sheet reads a minute. One operator page reads several
+// ranges, so a few quick clicks could hit that limit ("429 Too Many Requests").
+// Two things keep the app under it:
+//   - readCacheMs: identical reads within this many milliseconds share one
+//     answer (and one request in flight). Any write clears the cache at once,
+//     so a page never shows data older than its own last save.
+//   - retries: a 429 (or a passing 5xx) is retried after a short pause. Google
+//     rejected those requests, so retrying a write cannot save it twice.
+export type SheetOptions = { readCacheMs?: number; retries?: number; pause?: (ms: number) => Promise<void> };
+const RETRY_STATUSES = new Set([429, 500, 502, 503, 504]);
+
 export function createSheet(
   api: SheetsValuesApi,
   spreadsheetId: string,
   beforeRequest: () => Promise<void>,
+  options: SheetOptions = {},
 ): ContractorSheet {
+  const { readCacheMs = 0, retries = 0 } = options;
+  const pause = options.pause ?? ((ms: number) => new Promise<void>((r) => setTimeout(r, ms)));
+  const reads = new Map<string, { at: number; value: Promise<string[][][]> }>();
+
   async function call<T>(operation: () => Promise<T>): Promise<T> {
     // Runs first, every time. If it fails, no request is sent to Google.
     await beforeRequest();
-    try {
-      return await operation();
-    } catch (error) {
-      logFailure("sheets_request_failed", error);
-      throw error;
+    for (let attempt = 0; ; attempt++) {
+      try {
+        return await operation();
+      } catch (error) {
+        const status = httpStatusOf(error);
+        if (attempt < retries && status !== null && RETRY_STATUSES.has(status)) {
+          await pause(1000 * 2 ** attempt + Math.floor(Math.random() * 250));
+          continue;
+        }
+        logFailure("sheets_request_failed", error);
+        throw error;
+      }
     }
   }
+  // Every write goes through here so cached reads are dropped first.
+  const write = <T>(operation: () => Promise<T>) => {
+    reads.clear();
+    return call(operation).finally(() => reads.clear());
+  };
+
+  const readNow = (ranges: string[]) =>
+    call(async () => {
+      const res = await api.batchGet({
+        spreadsheetId,
+        ranges,
+        valueRenderOption: "FORMATTED_VALUE",
+      });
+      return (res.data.valueRanges ?? []).map((r) =>
+        (r.values ?? []).map((row) => row.map((cell) => String(cell))),
+      );
+    });
 
   return {
-    read: (ranges) =>
-      call(async () => {
-        const res = await api.batchGet({
-          spreadsheetId,
-          ranges,
-          valueRenderOption: "FORMATTED_VALUE",
-        });
-        return (res.data.valueRanges ?? []).map((r) =>
-          (r.values ?? []).map((row) => row.map((cell) => String(cell))),
-        );
-      }),
+    read: (ranges) => {
+      if (readCacheMs <= 0) return readNow(ranges);
+      const key = JSON.stringify(ranges);
+      const now = Date.now();
+      const hit = reads.get(key);
+      if (hit && now - hit.at < readCacheMs) return hit.value.then((grids) => grids.map((g) => g.map((row) => [...row])));
+      const value = readNow(ranges);
+      reads.set(key, { at: now, value });
+      value.catch(() => reads.delete(key)); // a failure is never reused
+      return value.then((grids) => grids.map((g) => g.map((row) => [...row])));
+    },
     append: (range, row) =>
-      call(async () => {
+      write(async () => {
         await api.append({
           spreadsheetId,
           range,
@@ -202,7 +242,7 @@ export function createSheet(
         });
       }),
     update: (range, row) =>
-      call(async () => {
+      write(async () => {
         await api.update({
           spreadsheetId,
           range,
@@ -216,7 +256,7 @@ export function createSheet(
     ...(api.addTab
       ? {
           addTab: (title: string) =>
-            call(async () => {
+            write(async () => {
               await api.addTab!(spreadsheetId, title);
             }),
         }
@@ -246,6 +286,11 @@ function valuesApiOf(client: sheets_v4.Sheets): SheetsValuesApi {
 }
 
 let cached: ContractorSheet | null = null;
+
+// The real Sheet: identical reads within 15 seconds are shared, and a "too many
+// requests" answer is retried up to 5 times (after about 1, 2, 4, 8 and 16
+// seconds), which covers Google's one-minute quota window.
+const LIVE_SHEET_OPTIONS: SheetOptions = { readCacheMs: 15_000, retries: 5 };
 
 // Lets automated tests swap in a pretend Sheet so the API routes can be tested
 // without Google. It refuses to work unless NODE_ENV is "test", which Next.js
@@ -290,7 +335,7 @@ export function getContractorSheet(): ContractorSheet {
         scopes: [SHEETS_SCOPE],
       }),
     });
-    cached = createSheet(valuesApiOf(client), settings.spreadsheetId, async () => {});
+    cached = createSheet(valuesApiOf(client), settings.spreadsheetId, async () => {}, LIVE_SHEET_OPTIONS);
     return cached;
   }
 
@@ -317,6 +362,6 @@ export function getContractorSheet(): ContractorSheet {
     return verified;
   };
 
-  cached = createSheet(valuesApiOf(client), settings.spreadsheetId, verifyOnce);
+  cached = createSheet(valuesApiOf(client), settings.spreadsheetId, verifyOnce, LIVE_SHEET_OPTIONS);
   return cached;
 }

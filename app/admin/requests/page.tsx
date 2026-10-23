@@ -121,7 +121,7 @@ async function RequestList() {
                 {rows.map(({ request: r, matches, bids, status, tone }) => (
                   <tr key={r.id} style={{ position: "relative" }}>
                     <td>
-                      <Link
+                      <Link prefetch={false}
                         href={`/admin/requests/${r.id}`}
                         aria-label={`${r.trade} in ${r.area}, ${r.id}: find potential contractors`}
                         className="h3 block after:absolute after:inset-0 after:content-['']"
@@ -154,7 +154,7 @@ async function RequestList() {
             <span className="pill pill-muted plain">{attention.length}</span>
           </div>
           {attention.map((a) => (
-            <Link key={a.key} href={a.href} className="attn">
+            <Link prefetch={false} key={a.key} href={a.href} className="attn">
               <span className="ic-box">
                 <Icon name={a.icon} />
               </span>

@@ -22,7 +22,7 @@ export function Avatar({ name }: { name: string }) {
 
 export function BackLink({ href, children }: { href: string; children: React.ReactNode }) {
   return (
-    <Link href={href} className="back-link">
+    <Link prefetch={false} href={href} className="back-link">
       <Icon name="back" size={16} /> {children}
     </Link>
   );

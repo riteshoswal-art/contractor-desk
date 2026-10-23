@@ -396,7 +396,7 @@ export default function BidPanel({
                   {!telegram.configured && (
                     <>
                       {" "}Telegram is not fully set up yet, so you may see <strong>previews</strong> marked &ldquo;not sent&rdquo;.{" "}
-                      <Link href="/admin/telegram" style={{ color: "var(--ink)", textDecoration: "underline" }}>Set up Telegram</Link>
+                      <Link prefetch={false} href="/admin/telegram" style={{ color: "var(--ink)", textDecoration: "underline" }}>Set up Telegram</Link>
                     </>
                   )}
                 </p>
@@ -663,7 +663,7 @@ function BidRow({
               {first ? `Select ${first}` : "Select this bidder"}
             </button>
           ) : bid.standing === "provisional" ? (
-            <Link href={confirmHref} className="btn btn-ghost" title="Record their confirmed start date on their card first">
+            <Link prefetch={false} href={confirmHref} className="btn btn-ghost" title="Record their confirmed start date on their card first">
               <Icon name="cal" size={16} /> Confirm start date first
             </Link>
           ) : (

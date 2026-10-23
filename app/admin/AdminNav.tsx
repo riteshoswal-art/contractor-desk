@@ -19,7 +19,7 @@ export default function AdminNav() {
       {ADMIN_LINKS.map(([href, label]) => {
         const on = path === href || path.startsWith(`${href}/`);
         return (
-          <Link
+          <Link prefetch={false}
             key={href}
             href={href}
             aria-current={on ? "page" : undefined}

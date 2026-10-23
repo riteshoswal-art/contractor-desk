@@ -99,7 +99,7 @@ async function ContactContent({ params }: { params: Props["params"] }) {
       </div>
       <p className="small muted" style={{ marginTop: 24, paddingTop: 16, borderTop: "1px solid var(--line)" }}>
         After you have pressed send in WhatsApp (or decided not to), come back and{" "}
-        <Link
+        <Link prefetch={false}
           href={`/admin/requests/${request.id}/outcome/${candidate.contractorId}`}
           style={{ color: "var(--ink)", fontWeight: 600, textDecoration: "underline" }}
         >

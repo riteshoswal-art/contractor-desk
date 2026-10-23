@@ -138,7 +138,7 @@ async function Overview() {
                 {rows.map((r) => (
                   <tr key={r.job.id} style={{ cursor: "default" }}>
                     <td style={{ verticalAlign: "top" }}>
-                      <Link href={`/admin/requests/${r.job.requestId}`} className="h3 block" style={{ color: "var(--ink)", textDecoration: "none" }}>
+                      <Link prefetch={false} href={`/admin/requests/${r.job.requestId}`} className="h3 block" style={{ color: "var(--ink)", textDecoration: "none" }}>
                         {r.trade} in {r.area}
                       </Link>
                       <div className="mono muted">{r.job.requestId}</div>

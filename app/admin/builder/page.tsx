@@ -65,7 +65,7 @@ async function BuilderHome() {
             <ul style={{ listStyle: "none", padding: 0, margin: 0 }}>
               {tickets.map((t) => (
                 <li key={t.id}>
-                  <Link href={`/admin/builder/${t.id}`} className="attn">
+                  <Link prefetch={false} href={`/admin/builder/${t.id}`} className="attn">
                     <span className="ic-box">
                       <Icon name="file" />
                     </span>

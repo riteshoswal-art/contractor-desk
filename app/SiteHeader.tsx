@@ -24,7 +24,7 @@ export default function SiteHeader({ active, children }: { active?: SiteArea; ch
         </Link>
         <nav aria-label="Main" className="cb-nav">
           {LINKS.map((l) => (
-            <Link key={l.area} href={l.href} aria-current={active === l.area ? "page" : undefined} className={`cb-nav-link${active === l.area ? " active" : ""}`}>
+            <Link key={l.area} href={l.href} prefetch={l.area === "operator" ? false : undefined} aria-current={active === l.area ? "page" : undefined} className={`cb-nav-link${active === l.area ? " active" : ""}`}>
               {l.short ? (
                 <>
                   <span className="nav-long">{l.label}</span>
