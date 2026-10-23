@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { connection } from "next/server";
 import { Suspense } from "react";
+import { raiseRequestHref } from "@/lib/fixtures";
 import { todayInIndia } from "@/lib/registration";
 import HomeSearch from "./HomeSearch";
 import SiteHeader from "./SiteHeader";
@@ -89,7 +90,7 @@ export default function Home() {
             <h2 className="h-display h-display-sm">From &ldquo;our plumber left&rdquo; to a chosen contractor</h2>
             <p className="lead">We do the matching and the follow-up. You make the choice, with prices, dates and reviews side by side.</p>
             <div>
-              <Link className="btn btn-primary" href="/builder">
+              <Link className="btn btn-primary" href={raiseRequestHref()}>
                 Raise a request <Icon name="arrow" size={16} />
               </Link>
             </div>
@@ -135,5 +136,5 @@ export default function Home() {
 // Today's date (India) for the search bar, read per request.
 async function Search() {
   await connection();
-  return <HomeSearch today={todayInIndia()} />;
+  return <HomeSearch today={todayInIndia()} target={raiseRequestHref()} />;
 }

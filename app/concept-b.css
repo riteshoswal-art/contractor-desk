@@ -84,6 +84,10 @@
 .btn-block { width: 100%; }
 .btn[disabled] { opacity: 0.45; cursor: not-allowed; }
 .pressable.is-pressed, .btn.is-pressed, .chip.is-pressed { transform: scale(0.97); }
+/* On phones a long label wraps inside the button instead of pushing it past the screen. */
+@media (max-width: 520px) {
+  .btn { white-space: normal; max-width: 100%; text-align: center; padding-block: 8px; line-height: 1.3; }
+}
 
 /* ---------- chips, pills, segmented ---------- */
 .chip {
@@ -404,6 +408,7 @@
 .cb-nav-link.active { color: var(--ink); }
 .cb-nav-link.active::after { content: ""; position: absolute; left: 0; right: 0; bottom: -15px; height: 2px; background: var(--ink); }
 .cb-nav-end { display: flex; align-items: center; gap: 10px; min-width: 120px; justify-content: flex-end; }
+.nav-short { display: none; }
 @media (max-width: 860px) {
   .cb-topnav { flex-wrap: wrap; padding: 12px 16px 0; row-gap: 4px; }
   .cb-nav { order: 3; flex-basis: 100%; justify-content: flex-start; overflow-x: auto; scrollbar-width: none; margin: 0 -6px; }
@@ -411,6 +416,10 @@
   .cb-nav-link { margin: 0 6px; padding: 10px 4px 12px; }
   .cb-nav-link.active::after { bottom: 0; }
   .cb-nav-end { margin-left: auto; min-width: 0; }
+}
+@media (max-width: 520px) {
+  .cb-nav-link .nav-long { display: none; }
+  .cb-nav-link .nav-short { display: inline; }
 }
 /* The "screen" card of the device stage: the phone screen without the frame. */
 .cb-screen { border-radius: var(--radius-xl); padding: 28px 24px; box-shadow: var(--shadow-lg); }

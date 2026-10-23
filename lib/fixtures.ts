@@ -27,6 +27,20 @@ export function fixturesEnabled(env: Record<string, string | undefined> = proces
   );
 }
 
+// Where "Raise a request" leads: the builder pages in the local data mode,
+// otherwise the request form (which saves to the Google Sheet). The home page
+// search's trade, locality and start date are carried over.
+export function raiseRequestHref(query: Record<string, string | string[] | undefined> = {}, local = fixturesEnabled()): string {
+  const q = new URLSearchParams();
+  for (const key of ["trade", "area", "start"]) {
+    const v = query[key];
+    const value = Array.isArray(v) ? v[0] : v;
+    if (value) q.set(key, value);
+  }
+  const path = local ? "/builder" : "/request";
+  return q.size ? `${path}?${q.toString()}` : path;
+}
+
 const row = (headers: readonly string[], o: Record<string, string>) => headers.map((h) => o[h] ?? "");
 const addDays = (days: number) => new Date(Date.now() + days * 86400_000).toISOString().slice(0, 10);
 

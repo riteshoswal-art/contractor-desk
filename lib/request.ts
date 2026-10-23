@@ -172,6 +172,21 @@ export const emptyRequest: RequestValues = {
   source: "manual",
 };
 
+// The trade, locality and start date passed in the address by the home page
+// search (?trade=Plumbing&area=Baner&start=2026-10-23). Anything that is not
+// one of the known choices or a real date is dropped, never guessed.
+export function requestPrefill(query: Record<string, string | string[] | undefined>): Pick<RequestValues, "trade" | "area" | "startDate"> {
+  const one = (v: string | string[] | undefined) => (Array.isArray(v) ? v[0] : v) ?? "";
+  const trade = one(query.trade);
+  const area = one(query.area);
+  const start = one(query.start);
+  return {
+    trade: (TRADES as readonly string[]).includes(trade) ? trade : "",
+    area: (PUNE_AREAS as readonly string[]).includes(area) ? area : "",
+    startDate: isRealDate(start) ? start : "",
+  };
+}
+
 // Turns an untrusted request body into RequestValues, or null if its shape is
 // wrong. `honeypot` is a hidden field that real people never fill in.
 export function parseRequestSubmission(

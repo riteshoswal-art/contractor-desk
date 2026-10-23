@@ -6,9 +6,9 @@ import { PUNE_AREAS, TRADES } from "@/lib/registration";
 import { Icon } from "./ui";
 
 // The Concept B search bar on the home page. It does not search anything by
-// itself: it opens the builder page with the ticket's trade, locality and
+// itself: it opens "Raise a request" (`target`) with the ticket's trade, locality and
 // start date already filled in.
-export default function HomeSearch({ today }: { today: string }) {
+export default function HomeSearch({ today, target }: { today: string; target: string }) {
   const router = useRouter();
   const [trade, setTrade] = useState<string>("Plumbing");
   const [area, setArea] = useState<string>("Baner");
@@ -20,7 +20,7 @@ export default function HomeSearch({ today }: { today: string }) {
       onSubmit={(e) => {
         e.preventDefault();
         const q = new URLSearchParams({ trade, area, start });
-        router.push(`/builder?${q.toString()}`);
+        router.push(`${target}?${q.toString()}`);
       }}
     >
       <label className="sb-seg">

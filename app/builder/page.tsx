@@ -1,11 +1,11 @@
 import type { Metadata } from "next";
 import { cookies } from "next/headers";
-import { notFound } from "next/navigation";
+import { redirect } from "next/navigation";
 import { connection } from "next/server";
 import { Suspense } from "react";
 import { BUILDER_COOKIE, builderForSession } from "@/lib/builders";
 import { demoState } from "@/lib/demo-store";
-import { fixturesEnabled } from "@/lib/fixtures";
+import { fixturesEnabled, raiseRequestHref } from "@/lib/fixtures";
 import { getContractorSheet, getRecordType } from "@/lib/google-sheets";
 import { loadJobs } from "@/lib/job-store";
 import { formatDate } from "@/lib/match";
@@ -53,10 +53,14 @@ const one = (v: string | string[] | undefined) => (Array.isArray(v) ? v[0] : v);
 async function BuilderHome({ searchParams }: { searchParams: PageProps<"/builder">["searchParams"] }) {
   await connection(); // per-request page: it reads today's date and the live state
   const token = (await cookies()).get(BUILDER_COOKIE)?.value;
-  if (!fixturesEnabled()) notFound();
+  const q = await searchParams;
+  // The builder pages keep their data on this computer (local data mode only).
+  // Everywhere else, including Vercel, "Raise a request" is the request form,
+  // which saves to the Google Sheet. next.config.ts redirects there first; this
+  // is the fallback.
+  if (!fixturesEnabled()) redirect(raiseRequestHref(q));
   const sheet = getContractorSheet(); // also loads the saved data
   const builder = builderForSession(token);
-  const q = await searchParams;
   const initial: TicketInitial = { trade: one(q.trade), area: one(q.area), startDate: one(q.start) };
 
   if (!builder)

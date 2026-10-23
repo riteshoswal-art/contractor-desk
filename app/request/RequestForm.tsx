@@ -66,11 +66,17 @@ function longDate(iso: string, language: LanguageCode): string {
 // Underneath, every value the server checks (trade names, locality spellings)
 // is unchanged; only what the person SEES is translated. The text they type is
 // sent and stored exactly as written, in whatever language.
-export default function RequestForm({ initialLanguage }: { initialLanguage?: LanguageCode }) {
+export default function RequestForm({
+  initialLanguage,
+  prefill,
+}: {
+  initialLanguage?: LanguageCode;
+  prefill?: Partial<Pick<RequestValues, "trade" | "area" | "startDate">>;
+}) {
   const [language, setLanguage] = useLanguage(initialLanguage);
   const d = getDict(language);
   const c = REQUEST_COPY[language];
-  const [values, setValues] = useState<RequestValues>(emptyRequest);
+  const [values, setValues] = useState<RequestValues>(() => ({ ...emptyRequest, ...prefill }));
   const [errors, setErrors] = useState<RequestErrors>({});
   const [stage, setStage] = useState<Stage>("describe");
   const [reviewStep, setReviewStep] = useState<ReviewStep>(2);

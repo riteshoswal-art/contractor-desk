@@ -20,6 +20,17 @@ const nextConfig: NextConfig = {
       },
     },
   },
+  // "Raise a request" lives at /builder only in the local data mode (lib/fixtures.ts
+  // has the same check). Everywhere else, including Vercel, /builder sends people
+  // to the request form, keeping the home page search's trade, area and date.
+  async redirects() {
+    const local =
+      process.env.CONTRACTOR_DESK_FIXTURES === "1" &&
+      process.env.NODE_ENV === "development" &&
+      !process.env.VERCEL &&
+      process.env.REGISTRATION_RECORD_TYPE !== "REAL";
+    return local ? [] : [{ source: "/builder", destination: "/request", permanent: false }];
+  },
   async headers() {
     return [
       {
