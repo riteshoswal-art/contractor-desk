@@ -10,14 +10,10 @@ import {
 import { formatMinutes } from "@/lib/stats";
 import { saveOutcomeAction } from "./actions";
 
-const field =
-  "mt-1 block w-full rounded-md border border-zinc-400 bg-white px-3 py-2.5 text-base focus:border-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-700/40 aria-[invalid=true]:border-red-700";
-const choice =
-  "flex cursor-pointer items-center gap-3 rounded-md border border-zinc-300 px-3 py-3 text-base has-[:checked]:border-blue-700 has-[:checked]:bg-blue-50";
 
 function Err({ message }: { message?: string }) {
   return message ? (
-    <p className="mt-1 text-sm font-medium text-red-700">{message}</p>
+    <p className="error">{message}</p>
   ) : null;
 }
 
@@ -33,15 +29,15 @@ function Radios<T extends string>({
   onChange: (v: T) => void;
 }) {
   return (
-    <div className="mt-2 space-y-2" role="radiogroup">
+    <div className="stack" style={{ ["--gap" as string]: "8px", marginTop: 8 }} role="radiogroup">
       {options.map((o) => (
-        <label key={o.value} className={choice}>
+        <label key={o.value} className="check card flat" style={{ padding: "12px 14px", alignItems: "center", borderColor: value === o.value ? "var(--ink)" : undefined }}>
           <input
             type="radio"
             name={name}
             checked={value === o.value}
             onChange={() => onChange(o.value)}
-            className="h-4 w-4 accent-blue-800"
+            style={{ marginTop: 0 }}
           />
           {o.label}
         </label>
@@ -115,25 +111,25 @@ export default function OutcomeForm({
   const count = Object.values(errors).filter(Boolean).length;
 
   return (
-    <form onSubmit={submit} noValidate className="mt-6 space-y-6">
+    <form onSubmit={submit} noValidate className="stack" style={{ ["--gap" as string]: "24px" }}>
       {exists && (
-        <p className="rounded-md border border-blue-200 bg-blue-50 p-3 text-sm">
+        <p className="notice notice-info" style={{ margin: 0 }}>
           An outcome is already recorded for this contractor and request.
           Saving will update it.
         </p>
       )}
       {count > 0 && (
-        <div role="alert" className="rounded-md border border-red-300 bg-red-50 p-3 text-sm text-red-900">
+        <div role="alert" className="notice notice-warn">
           Please fix {count === 1 ? "1 problem" : `${count} problems`} below.
         </div>
       )}
       {failed && (
-        <div role="alert" className="rounded-md border border-red-300 bg-red-50 p-3 text-sm font-medium text-red-900">
+        <div role="alert" className="notice notice-warn" style={{ fontWeight: 600 }}>
           {failed}
         </div>
       )}
       {saved && (
-        <div role="status" className="rounded-md border border-green-300 bg-green-50 p-3 text-sm font-medium text-green-900">
+        <div role="status" className="notice notice-ok" style={{ fontWeight: 600 }}>
           Outcome {saved.updated ? "updated" : "saved"}.{" "}
           {saved.minutes !== null
             ? `Response time recorded: ${formatMinutes(saved.minutes)}.`
@@ -142,10 +138,10 @@ export default function OutcomeForm({
       )}
 
       <fieldset>
-        <legend className="text-sm font-medium">
-          Did you actually send the message? <span className="text-red-700">*</span>
+        <legend className="label">
+          Did you actually send the message? <span style={{ color: "var(--err-ink)" }}>*</span>
         </legend>
-        <p className="mt-1 text-sm text-zinc-600">
+        <p className="help" style={{ marginTop: 0 }}>
           Opening the WhatsApp link does not count. Only say yes if you pressed
           send.
         </p>
@@ -162,9 +158,9 @@ export default function OutcomeForm({
       </fieldset>
 
       {sent && (
-        <div>
-          <label htmlFor="contactAttemptedAt" className="block text-sm font-medium">
-            When did you send it? (India time) <span className="text-red-700">*</span>
+        <div className="field">
+          <label htmlFor="contactAttemptedAt" className="label">
+            When did you send it? (India time) <span style={{ color: "var(--err-ink)" }}>*</span>
           </label>
           <input
             id="contactAttemptedAt"
@@ -172,7 +168,7 @@ export default function OutcomeForm({
             value={v.contactAttemptedAt}
             onChange={(e) => set("contactAttemptedAt", e.target.value)}
             aria-invalid={errors.contactAttemptedAt ? true : undefined}
-            className={field}
+            className="input"
           />
           <Err message={errors.contactAttemptedAt} />
         </div>
@@ -180,8 +176,8 @@ export default function OutcomeForm({
 
       {sent && (
         <fieldset>
-          <legend className="text-sm font-medium">Contractor reply</legend>
-          <p className="mt-1 text-sm text-zinc-600">
+          <legend className="label">Contractor reply</legend>
+          <p className="help" style={{ marginTop: 0 }}>
             A reply is not the same as confirmed availability. Record only what
             they actually said.
           </p>
@@ -201,8 +197,8 @@ export default function OutcomeForm({
       )}
 
       {replied && (
-        <div>
-          <label htmlFor="repliedAt" className="block text-sm font-medium">
+        <div className="field">
+          <label htmlFor="repliedAt" className="label">
             When did they reply? (India time, optional)
           </label>
           <input
@@ -211,9 +207,9 @@ export default function OutcomeForm({
             value={v.repliedAt}
             onChange={(e) => set("repliedAt", e.target.value)}
             aria-invalid={errors.repliedAt ? true : undefined}
-            className={field}
+            className="input"
           />
-          <p className="mt-1 text-sm text-zinc-600">
+          <p className="help" style={{ marginTop: 0 }}>
             Leave it empty if you do not know. No response time is calculated
             without it.
           </p>
@@ -222,7 +218,7 @@ export default function OutcomeForm({
       )}
 
       <fieldset>
-        <legend className="text-sm font-medium">Was this match usable?</legend>
+        <legend className="label">Was this match usable?</legend>
         <Radios
           name="matchUsable"
           value={v.matchUsable}
@@ -235,8 +231,8 @@ export default function OutcomeForm({
         />
       </fieldset>
 
-      <div>
-        <label htmlFor="rating" className="block text-sm font-medium">
+      <div className="field">
+        <label htmlFor="rating" className="label">
           How useful was it? (1 = not useful, 5 = very useful, optional)
         </label>
         <select
@@ -244,7 +240,7 @@ export default function OutcomeForm({
           value={v.rating ?? ""}
           onChange={(e) => set("rating", e.target.value === "" ? null : Number(e.target.value))}
           aria-invalid={errors.rating ? true : undefined}
-          className={field}
+          className="select"
         >
           <option value="">No rating</option>
           {[1, 2, 3, 4, 5].map((n) => (
@@ -256,17 +252,17 @@ export default function OutcomeForm({
         <Err message={errors.rating} />
       </div>
 
-      <div>
-        <label htmlFor="failureReason" className="block text-sm font-medium">
+      <div className="field">
+        <label htmlFor="failureReason" className="label">
           Reason it did not work out{" "}
-          {v.matchUsable === "no" ? <span className="text-red-700">*</span> : "(optional)"}
+          {v.matchUsable === "no" ? <span style={{ color: "var(--err-ink)" }}>*</span> : "(optional)"}
         </label>
         <select
           id="failureReason"
           value={v.failureReason}
           onChange={(e) => set("failureReason", e.target.value)}
           aria-invalid={errors.failureReason ? true : undefined}
-          className={field}
+          className="select"
         >
           <option value="">No reason</option>
           {FAILURE_REASONS.map((r) => (
@@ -279,7 +275,7 @@ export default function OutcomeForm({
       </div>
 
       <fieldset>
-        <legend className="text-sm font-medium">Did the job start, if you know?</legend>
+        <legend className="label">Did the job start, if you know?</legend>
         <Radios
           name="jobStarted"
           value={v.jobStarted}
@@ -296,7 +292,7 @@ export default function OutcomeForm({
       <button
         type="submit"
         disabled={busy}
-        className="w-full rounded-md bg-blue-800 px-4 py-3 text-base font-semibold text-white hover:bg-blue-900 disabled:opacity-60 sm:w-auto"
+        className="btn btn-primary btn-lg"
       >
         {busy ? "Saving…" : "Save outcome"}
       </button>

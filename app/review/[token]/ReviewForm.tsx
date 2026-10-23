@@ -5,6 +5,7 @@ import { fill, getDict, translateMessage } from "@/lib/i18n";
 import type { LanguageCode } from "@/lib/language";
 import { COMMENT_MAX, validateReview, type ReviewErrors } from "@/lib/review";
 import LanguageSelector from "../../LanguageSelector";
+import { Icon, Logo } from "../../ui";
 import { useLanguage } from "../../useLanguage";
 import { submitReviewAction } from "./actions";
 
@@ -19,21 +20,22 @@ export type ReviewJobInfo = {
 type Score = number | null;
 type Status = "idle" | "sending" | "done" | "used" | "bad_link" | "failed";
 
-const fieldClass =
-  "mt-1 block w-full rounded-md border border-zinc-400 bg-white px-3 py-2.5 text-base text-zinc-900 placeholder:text-zinc-500 focus:border-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-700/40 aria-[invalid=true]:border-red-700";
-const labelClass = "block text-sm font-medium text-zinc-900";
-
 // "2026-10-21" -> "21-10-2026": digits only, so it reads the same in every language.
 const dayMonthYear = (iso: string) => iso.split("-").reverse().join("-");
 
-// Five large star buttons. A star is an ordinary button, so it works with a
-// finger, a mouse and a keyboard, and a screen reader hears "3 out of 5".
+const Req = () => <span className="req">*</span>;
+
+// Five star buttons (44px; 38px for the optional criteria). A star is an
+// ordinary button, so it works with a finger, a mouse and a keyboard, and a
+// screen reader hears "3 out of 5".
 function Stars({
   name,
   value,
   onChange,
   describedBy,
   invalid,
+  required,
+  small,
   starLabel,
 }: {
   name: string;
@@ -41,10 +43,19 @@ function Stars({
   onChange: (next: Score) => void;
   describedBy?: string;
   invalid?: boolean;
+  required?: boolean;
+  small?: boolean;
   starLabel: (n: number) => string;
 }) {
   return (
-    <div role="radiogroup" aria-labelledby={`${name}-label`} aria-describedby={describedBy} aria-invalid={invalid || undefined} className="mt-2 flex gap-1">
+    <div
+      role="radiogroup"
+      aria-labelledby={`${name}-label`}
+      aria-describedby={describedBy}
+      aria-invalid={invalid || undefined}
+      aria-required={required || undefined}
+      className={small ? "stars stars-sm" : "stars"}
+    >
       {[1, 2, 3, 4, 5].map((n) => {
         const on = value !== null && n <= value;
         return (
@@ -55,9 +66,7 @@ function Stars({
             aria-checked={value === n}
             aria-label={starLabel(n)}
             onClick={() => onChange(n)}
-            className={`flex h-12 w-12 items-center justify-center rounded-md border text-3xl leading-none focus:outline-none focus:ring-2 focus:ring-blue-700 ${
-              on ? "border-amber-500 bg-amber-100 text-amber-600" : "border-zinc-300 bg-white text-zinc-400"
-            }`}
+            className={on ? "star on" : "star"}
           >
             <span aria-hidden="true">★</span>
           </button>
@@ -119,39 +128,52 @@ export default function ReviewForm({ token, info }: { token: string; info: Revie
     }
   }
 
-  const header = (
-    <>
-      <p className="text-sm font-medium text-zinc-600">{d.common.brand}</p>
-      <h1 className="mt-1 text-2xl font-semibold tracking-tight sm:text-3xl">{t.title}</h1>
-      <p className="mt-3 text-base leading-7 text-zinc-700">{t.intro}</p>
-      <div className="mt-6 rounded-md border border-zinc-300 bg-zinc-50 p-4 text-sm leading-6">
-        <p className="font-semibold">{t.jobHeading}</p>
-        <p className="mt-1">{fill(t.jobLine, { trade, area })}</p>
-        {info.startDate && <p className="text-zinc-700">{fill(t.neededFrom, { date: dayMonthYear(info.startDate) })}</p>}
-        <p className="text-zinc-700">
+  const topRow = (
+    <div className="row between">
+      <span className="brand-sm">
+        <Logo />
+        <span className="sr-only">{d.common.brand}</span>
+      </span>
+      <LanguageSelector language={language} onChange={setLanguage} variant="compact" />
+    </div>
+  );
+
+  const job = (
+    <div className="card tint flat">
+      <span className="eyebrow">{t.jobHeading}</span>
+      <p className="h3" style={{ marginTop: 6 }}>
+        {fill(t.jobLine, { trade, area })}
+      </p>
+      <div className="small muted" style={{ marginTop: 4 }}>
+        {info.startDate && (
+          <p className="m-0 flex items-center gap-1.5">
+            <Icon name="cal" size={15} /> {fill(t.neededFrom, { date: dayMonthYear(info.startDate) })}
+          </p>
+        )}
+        <p className="m-0 flex items-center gap-1.5">
+          <Icon name="check" size={15} />{" "}
           {info.completionDate ? fill(t.completedOn, { date: dayMonthYear(info.completionDate) }) : t.completionUnknown}
         </p>
-        <p className="mt-2 text-zinc-600">{t.contractorNote}</p>
+        <p className="mt-2 mb-0 leading-normal">{t.contractorNote}</p>
       </div>
-      <LanguageSelector language={language} onChange={setLanguage} />
-    </>
+    </div>
   );
 
   if (status === "done" || status === "used" || status === "bad_link") {
     const message = status === "done" ? t.thanks : status === "used" ? t.alreadyDone : t.linkBad;
     return (
       <div lang={language}>
-        {header}
-        <div
-          role="status"
-          className={`mt-8 rounded-md border p-4 text-sm font-medium ${
-            status === "bad_link" ? "border-red-300 bg-red-50 text-red-900" : "border-green-300 bg-green-50 text-green-900"
-          }`}
-        >
-          {message}
-          {status === "done" && translation === "pending" && (
-            <span className="mt-1 block font-normal">{t.translationPending}</span>
-          )}
+        <div className="stack" style={{ ["--gap" as string]: "16px" }}>
+          {topRow}
+          <div className="center-done stack" style={{ ["--gap" as string]: "14px" }}>
+            <span className={status === "bad_link" ? "done-ic bg-[var(--surface-2)] text-[var(--ink)]" : "done-ic"}>
+              <Icon name={status === "bad_link" ? "info" : "check"} size={30} />
+            </span>
+            <h1 role="status" className="h1">
+              {message}
+            </h1>
+            {status === "done" && translation === "pending" && <p className="small muted mb-0">{t.translationPending}</p>}
+          </div>
         </div>
       </div>
     );
@@ -166,80 +188,105 @@ export default function ReviewForm({ token, info }: { token: string; info: Revie
 
   return (
     <div lang={language}>
-      {header}
-      <form onSubmit={submit} noValidate className="mt-8 space-y-6">
+      <form onSubmit={submit} noValidate className="stack" style={{ ["--gap" as string]: "18px" }}>
+        {topRow}
+        <div>
+          <h1 className="h1">{t.title}</h1>
+          <p className="muted small" style={{ margin: "6px 0 0" }}>
+            {t.intro}
+          </p>
+        </div>
+        {job}
+
         {errorCount > 0 && (
-          <div role="alert" className="rounded-md border border-red-300 bg-red-50 p-4 text-sm text-red-900">
+          <div role="alert" className="notice small bg-red-50 text-red-900">
             {errorCount === 1 ? d.common.fixOne : fill(d.common.fixMany, { n: errorCount })}
           </div>
         )}
         {status === "failed" && (
-          <div role="alert" className="rounded-md border border-red-300 bg-red-50 p-4 text-sm font-medium text-red-900">
+          <div role="alert" className="notice small bg-red-50 font-semibold text-red-900">
             {t.failed}
           </div>
         )}
 
-        <div>
-          <p id="overall-label" className={labelClass}>
-            {t.overallLabel} <span className="text-red-700">*</span>
+        <div className="field">
+          <p id="overall-label" className="label">
+            {t.overallLabel} <Req />
           </p>
-          <p className="text-sm text-zinc-600">{t.overallHelp}</p>
-          <Stars name="overall" value={overall} onChange={setOverall} describedBy={errors.overall ? "overall-error" : undefined} invalid={Boolean(errors.overall)} starLabel={starLabel} />
+          <p id="overall-help" className="help" style={{ margin: "0 0 8px" }}>
+            {t.overallHelp}
+          </p>
+          <Stars
+            name="overall"
+            value={overall}
+            onChange={setOverall}
+            describedBy={errors.overall ? "overall-error overall-help" : "overall-help"}
+            invalid={Boolean(errors.overall)}
+            required
+            starLabel={starLabel}
+          />
           {errors.overall && (
-            <p id="overall-error" className="mt-1 text-sm font-medium text-red-700">
+            <p id="overall-error" className="error">
               {say("overall")}
             </p>
           )}
         </div>
 
         {criteria.map((c) => (
-          <div key={c.key}>
-            <p id={`${c.key}-label`} className={labelClass}>
-              {c.label} <span className="font-normal text-zinc-600">{d.common.optional}</span>
+          <div key={c.key} className="field">
+            <p id={`${c.key}-label`} className="label">
+              {c.label} <span className="opt">{d.common.optional}</span>
             </p>
-            <Stars name={c.key} value={c.value} onChange={c.set} describedBy={errors[c.key] ? `${c.key}-error` : undefined} invalid={Boolean(errors[c.key])} starLabel={starLabel} />
-            {c.value !== null && (
-              <button type="button" onClick={() => c.set(null)} className="mt-1 py-1 text-sm text-blue-800 underline">
-                {t.clearScore}
-              </button>
-            )}
+            <div className="row wrap" style={{ gap: "6px 12px" }}>
+              <Stars
+                name={c.key}
+                value={c.value}
+                onChange={c.set}
+                describedBy={errors[c.key] ? `${c.key}-error` : undefined}
+                invalid={Boolean(errors[c.key])}
+                small
+                starLabel={starLabel}
+              />
+              {c.value !== null && (
+                <button type="button" onClick={() => c.set(null)} className="btn btn-quiet small">
+                  {t.clearScore}
+                </button>
+              )}
+            </div>
             {errors[c.key] && (
-              <p id={`${c.key}-error`} className="mt-1 text-sm font-medium text-red-700">
+              <p id={`${c.key}-error`} className="error">
                 {say(c.key)}
               </p>
             )}
           </div>
         ))}
 
-        <div>
-          <label htmlFor="comment" className={labelClass}>
-            {t.commentLabel} <span className="font-normal text-zinc-600">{d.common.optional}</span>
+        <div className="field">
+          <label htmlFor="comment" className="label">
+            {t.commentLabel} <span className="opt">{d.common.optional}</span>
           </label>
           <textarea
             id="comment"
-            rows={4}
+            rows={3}
             maxLength={COMMENT_MAX}
+            className="textarea"
+            style={{ minHeight: 90 }}
             value={comment}
             onChange={(e) => setComment(e.target.value)}
             aria-invalid={errors.comment ? true : undefined}
-            aria-describedby={errors.comment ? "comment-error" : "comment-help"}
-            className={fieldClass}
+            aria-describedby={errors.comment ? "comment-error comment-help" : "comment-help"}
           />
-          <p id="comment-help" className="mt-1 text-sm text-zinc-600">
+          <p id="comment-help" className="help">
             {t.commentHelp} {fill(t.charCount, { n: comment.length, max: COMMENT_MAX })}
           </p>
           {errors.comment && (
-            <p id="comment-error" className="mt-1 text-sm font-medium text-red-700">
+            <p id="comment-error" className="error">
               {say("comment")}
             </p>
           )}
         </div>
 
-        <button
-          type="submit"
-          disabled={status === "sending"}
-          className="w-full rounded-md bg-blue-800 px-4 py-3 text-base font-semibold text-white hover:bg-blue-900 focus:outline-none focus:ring-2 focus:ring-blue-700 focus:ring-offset-2 disabled:opacity-60 sm:w-auto"
-        >
+        <button type="submit" disabled={status === "sending"} className="btn btn-primary btn-block btn-lg">
           {status === "sending" ? t.submitting : t.submit}
         </button>
       </form>

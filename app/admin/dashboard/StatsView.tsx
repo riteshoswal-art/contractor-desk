@@ -21,9 +21,9 @@ function ratio(m: Metric): string {
 
 function Row({ label, value }: { label: string; value: React.ReactNode }) {
   return (
-    <div className="flex flex-wrap justify-between gap-x-4 gap-y-1 border-b border-zinc-200 py-2 text-sm">
-      <dt className="text-zinc-700">{label}</dt>
-      <dd className="font-medium">{value}</dd>
+    <div className="row between wrap" style={{ alignItems: "baseline", gap: "4px 16px", padding: "12px 0", borderBottom: "1px solid var(--line)", fontSize: "0.92rem" }}>
+      <dt className="muted">{label}</dt>
+      <dd style={{ margin: 0, fontWeight: 600, textAlign: "right" }}>{value}</dd>
     </div>
   );
 }
@@ -44,22 +44,44 @@ export default function StatsView({
   return (
     <section
       aria-labelledby={`h-${stats.recordType}`}
-      className={`mt-8 rounded-md border p-4 ${real ? "border-zinc-400" : "border-amber-400 bg-amber-50"}`}
+      className={`card stack${real ? "" : " tint"}`}
+      style={{ ["--gap" as string]: "16px", padding: 24 }}
     >
-      <h2 id={`h-${stats.recordType}`} className="text-lg font-semibold">
-        {title}
-      </h2>
-      <p className="mt-1 text-sm text-zinc-700">{caption}</p>
+      <div className="row between wrap" style={{ gap: 8 }}>
+        <div>
+          <h2 id={`h-${stats.recordType}`} className="h2">
+            {title}
+          </h2>
+          <p className="small muted" style={{ margin: "4px 0 0" }}>{caption}</p>
+        </div>
+        <span className={`pill ${real ? "pill-dark" : "pill-warn"}`}>{real ? "Real records" : "Test records"}</span>
+      </div>
 
       {!stats.hasData ? (
-        <p role="status" className="mt-4 rounded-md border border-zinc-300 bg-white p-4 text-sm">
+        <p role="status" className="notice notice-muted" style={{ background: "var(--surface)", border: "1px solid var(--line)" }}>
           No {real ? "real" : "test"} results yet.{" "}
           {real
             ? "Real outcomes will appear here after you record them for real contractors. Nothing is estimated in the meantime."
             : "Test outcomes appear here after you record them for test contractors."}
         </p>
       ) : (
-        <dl className="mt-3">
+        <>
+        <div className="facts facts-inline" style={{ padding: "4px 0 20px", margin: 0 }}>
+          {(
+            [
+              [stats.total, "outcomes recorded"],
+              [stats.sent.yes, "messages sent"],
+              [stats.replies.yes, "replied yes"],
+              [stats.jobStarted.yes, "jobs started"],
+            ] as [number, string][]
+          ).map(([n, label]) => (
+            <div key={label}>
+              <b>{n}</b>
+              <span>{label}</span>
+            </div>
+          ))}
+        </div>
+        <dl style={{ margin: 0 }}>
           <Row label="Outcomes recorded" value={stats.total} />
           <Row
             label="Messages you confirmed sending"
@@ -113,6 +135,7 @@ export default function StatsView({
             />
           )}
         </dl>
+        </>
       )}
     </section>
   );

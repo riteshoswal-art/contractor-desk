@@ -1,5 +1,4 @@
 import type { Metadata } from "next";
-import Link from "next/link";
 import { Suspense } from "react";
 import { istTime } from "@/lib/bid-alert";
 import { latestByPair, pairKey, type Confirmation } from "@/lib/confirmation";
@@ -16,6 +15,7 @@ import BidPanel from "../../requests/[id]/BidPanel";
 import JobPanel from "../../requests/[id]/JobPanel";
 import { loadBidWorkspace } from "../../requests/[id]/bid-data";
 import { loadJobWorkspace } from "../../requests/[id]/job-data";
+import { Avatar, BackLink, Notice, RequestMeta } from "../../requests/[id]/detail-ui";
 import LiveRefresh from "./LiveRefresh";
 import MatchesPanel, { type MatchRow } from "./MatchesPanel";
 
@@ -23,7 +23,7 @@ export const metadata: Metadata = { title: "Ticket | Contractor Desk" };
 
 export default function TicketPage(props: PageProps<"/admin/builder/[id]">) {
   return (
-    <Suspense fallback={<p className="p-6 text-sm">Loading…</p>}>
+    <Suspense fallback={<p className="small muted" style={{ padding: 24 }}>Loading…</p>}>
       <AdminShell>
         <Ticket params={props.params} searchParams={props.searchParams} />
       </AdminShell>
@@ -32,9 +32,9 @@ export default function TicketPage(props: PageProps<"/admin/builder/[id]">) {
 }
 
 const ALERT_TEXT: Record<string, { text: string; tone: string }> = {
-  sent: { text: "Builder alerted on Telegram", tone: "bg-green-100 text-green-900" },
-  failed: { text: "Builder Telegram alert failed (the bid is saved)", tone: "bg-red-100 text-red-900" },
-  not_configured: { text: "Builder alert not sent: TELEGRAM_FOUNDER_CHAT_ID not set (the bid is saved)", tone: "bg-amber-100 text-amber-900" },
+  sent: { text: "Builder alerted on Telegram", tone: "pill-ok" },
+  failed: { text: "Builder Telegram alert failed (the bid is saved)", tone: "pill-warn" },
+  not_configured: { text: "Builder alert not sent: TELEGRAM_FOUNDER_CHAT_ID not set (the bid is saved)", tone: "pill-warn" },
 };
 
 // Everything the ticket view shows, read fresh on every request (and on every
@@ -89,72 +89,99 @@ async function Ticket({ params, searchParams }: { params: PageProps<"/admin/buil
   }
   if (failed) {
     return (
-      <p role="alert" className="mt-6 rounded-md border border-red-300 bg-red-50 p-4 text-sm text-red-900">
-        Could not load this ticket. Check the setup and try again.
-      </p>
+      <div style={{ marginTop: 24 }}>
+        <Notice tone="warn" icon="info" role="alert">
+          Could not load this ticket. Check the setup and try again.
+        </Notice>
+      </div>
     );
   }
   if (!data) {
     return (
-      <div className="mt-6 space-y-3">
-        <p role="status" className="rounded-md border border-zinc-300 bg-zinc-50 p-4 text-sm">That ticket was not found among the {recordType} records.</p>
-        <Link href="/admin/builder" className="text-sm text-blue-800 underline">&larr; Tickets</Link>
+      <div className="stack" style={{ marginTop: 24, ["--gap" as string]: "12px" }}>
+        <BackLink href="/admin/builder">Tickets</BackLink>
+        <Notice tone="muted" icon="info" role="status">
+          That ticket was not found among the {recordType} records.
+        </Notice>
       </div>
     );
   }
   const { request, workspace, bidWorkspace, panel, rows, liveBids, alerts } = data;
   const cfg = telegramConfig();
+  const job = workspace.panel?.job ?? null;
+  const status: { text: string; tone: string } = job
+    ? job.status === "completed"
+      ? { text: "Job completed", tone: "pill-ok" }
+      : job.status === "cancelled"
+        ? { text: "Job cancelled", tone: "pill-muted" }
+        : { text: "Contractor selected", tone: "pill-dark" }
+    : panel
+      ? panel.state === "open"
+        ? { text: `Bidding open${panel.closesAt ? ` · closes ${formatDate(panel.closesAt)}` : ""}`, tone: "pill-info" }
+        : { text: panel.stateText, tone: panel.state === "selected" ? "pill-dark" : "pill-muted" }
+      : { text: request.status || "Status not recorded", tone: "pill-muted" };
 
   return (
-      <div className="mt-6">
-        <Link href="/admin/builder" className="text-sm text-blue-800 underline">&larr; Tickets</Link>
+    <div style={{ marginTop: 24 }}>
+      <div className="detail-head">
+        <BackLink href="/admin/builder">Tickets</BackLink>
         {isNew && (
-          <p role="status" className="mt-4 rounded-md border border-green-300 bg-green-50 p-3 text-sm font-medium text-green-900">
-            Ticket raised. Reference: <span className="font-mono">{request.id}</span>. No contractor has been contacted yet.
+          <Notice tone="ok" icon="check" role="status">
+            <b>
+              Ticket raised. Reference: <span className="mono">{request.id}</span>. No contractor has been contacted yet.
+            </b>
+          </Notice>
+        )}
+        <div className="stack" style={{ ["--gap" as string]: "10px" }}>
+          <div className="row wrap">
+            <span className="mono muted">Ticket {request.id}</span>
+            <span className={`pill ${status.tone}`}>{status.text}</span>
+          </div>
+          <h1 className="h1">
+            {request.trade} in {request.area}
+          </h1>
+          <RequestMeta request={request} who="Builder" />
+        </div>
+        <p className="quote desc whitespace-pre-wrap">{request.description}</p>
+        {request.notes && (
+          <p className="small desc" style={{ margin: 0 }}>
+            <span className="muted">Notes:</span> {request.notes}
           </p>
         )}
-        <p className="mt-4 font-mono text-sm text-zinc-600">Ticket {request.id}</p>
-        <h1 className="text-2xl font-semibold tracking-tight">{request.trade} in {request.area}</h1>
-        <dl className="mt-3 grid grid-cols-[auto_1fr] gap-x-4 gap-y-1 text-sm">
-          <dt className="text-zinc-600">Needed from</dt>
-          <dd>{request.startDate ? formatDate(request.startDate) : "Not stated"}</dd>
-          <dt className="text-zinc-600">Duration</dt>
-          <dd>{request.durationDays ? `About ${request.durationDays} days` : "Not stated"}</dd>
-          <dt className="text-zinc-600">Builder</dt>
-          <dd>{request.developerName || "Name not given"}</dd>
-          {request.notes && (
-            <>
-              <dt className="text-zinc-600">Notes</dt>
-              <dd>{request.notes}</dd>
-            </>
-          )}
-        </dl>
-        <p className="mt-3 whitespace-pre-wrap rounded-md bg-zinc-50 p-3 text-sm text-zinc-800">{request.description}</p>
-
         {bidWorkspace.missingTabs.length > 0 && (
-          <p role="status" className="mt-6 rounded-md border border-amber-300 bg-amber-50 p-3 text-sm text-amber-950">
+          <Notice tone="warn" icon="info" role="status">
             Bidding is not set up in this Sheet (missing {bidWorkspace.missingTabs.join(", ")}). Use the local data mode.
-          </p>
+          </Notice>
         )}
+      </div>
 
+      <div className="stack" style={{ ["--gap" as string]: "40px" }}>
         <MatchesPanel requestId={request.id} rows={rows} botReady={Boolean(telegramToken())} builderAlertsReady={cfg.configured} />
 
-        <section aria-labelledby="bids-heading" className="mt-8 space-y-3">
-          <h2 id="bids-heading" className="text-lg font-semibold">2. Bids</h2>
+        <section aria-labelledby="bids-heading" className="stack" style={{ ["--gap" as string]: "16px" }}>
+          <div className="group-head">
+            <h2 id="bids-heading" className="h2">2. Bids</h2>
+            <span className="small muted">
+              <b style={{ color: "var(--ink)" }}>{liveBids.length}</b> bid{liveBids.length === 1 ? "" : "s"} received
+              {liveBids[0] && <> · latest from {liveBids[0].contractorName} at {istTime(liveBids[0].submittedAt)}</>}
+            </span>
+          </div>
           <LiveRefresh />
-          <p className="text-sm">
-            <span className="font-semibold">{liveBids.length}</span> bid{liveBids.length === 1 ? "" : "s"} received
-            {liveBids[0] && <> · latest from {liveBids[0].contractorName} at {istTime(liveBids[0].submittedAt)}</>}
-          </p>
           {liveBids.length > 0 && (
-            <ul className="space-y-1 text-sm">
-              {liveBids.map((b) => {
+            <ul className="card flat" style={{ listStyle: "none", margin: 0, padding: "4px 16px" }} aria-label="Bids as they arrived, newest first">
+              {liveBids.map((b, i) => {
                 const alert = alerts[b.bidId];
-                const a = alert ? (alert.detail === "sending" ? { text: "Builder alert sending…", tone: "bg-zinc-100 text-zinc-700" } : ALERT_TEXT[alert.status]) : null;
+                const a = alert ? (alert.detail === "sending" ? { text: "Builder alert sending…", tone: "pill-muted" } : ALERT_TEXT[alert.status]) : null;
                 return (
-                  <li key={b.bidId} className="flex flex-wrap items-center gap-2">
-                    <span className="font-medium">{b.contractorName}</span> {b.price} <span className="text-zinc-600">{istTime(b.submittedAt)}</span>
-                    {a && <span className={`rounded px-1.5 py-0.5 text-xs font-semibold ${a.tone}`}>{a.text}</span>}
+                  <li key={b.bidId} className="row wrap" style={{ padding: "10px 0", borderTop: i === 0 ? 0 : "1px solid var(--line)", gap: 10 }}>
+                    <Avatar name={b.contractorName} />
+                    <span className="grow">
+                      <span className="h3" style={{ display: "block" }}>{b.contractorName}</span>
+                      <span className="small muted">
+                        {b.price} · {istTime(b.submittedAt)}
+                      </span>
+                    </span>
+                    {a && <span className={`pill ${a.tone}`} style={{ whiteSpace: "normal" }}>{a.text}</span>}
                   </li>
                 );
               })}
@@ -163,10 +190,15 @@ async function Ticket({ params, searchParams }: { params: PageProps<"/admin/buil
           {panel && <BidPanel panel={panel} today={todayInIndia()} telegram={{ configured: Boolean(telegramToken()), testMode: recordType === "TEST" }} />}
         </section>
 
-        <section className="mt-8">
-          <h2 className="text-lg font-semibold">3. Job, contact details and review</h2>
-          {workspace.panel ? <JobPanel {...workspace.panel} /> : <p className="mt-2 text-sm text-zinc-700">The Jobs tab is not set up.</p>}
+        <section aria-labelledby="job-section-heading" className="stack" style={{ ["--gap" as string]: "16px" }}>
+          <h2 id="job-section-heading" className="h2">3. Job, contact details and review</h2>
+          {workspace.panel ? (
+            <JobPanel {...workspace.panel} />
+          ) : (
+            <Notice tone="muted" icon="info">The Jobs tab is not set up.</Notice>
+          )}
         </section>
       </div>
-    );
+    </div>
+  );
 }

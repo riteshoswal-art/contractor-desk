@@ -3,10 +3,14 @@
 import { cookies } from "next/headers";
 import { BUILDER_COOKIE, builderForSession, raiseTicket, registerBuilder, validateBuilder, type BuilderErrors } from "@/lib/builders";
 import { SheetSetupError } from "@/lib/contractor-store";
+import { demoState } from "@/lib/demo-store";
 import { fixturesEnabled } from "@/lib/fixtures";
 import { getContractorSheet, getRecordType } from "@/lib/google-sheets";
 import { createRateLimiter, newId } from "@/lib/http";
+import { completeJob, loadJobs } from "@/lib/job-store";
+import { todayInIndia } from "@/lib/registration";
 import type { RequestErrors } from "@/lib/request";
+import { createInvite } from "@/lib/review-store";
 import { botUsername, telegramToken } from "@/lib/telegram";
 import { flowEnv } from "@/lib/telegram-bot";
 import { askContractors } from "@/lib/telegram-flow";
@@ -90,5 +94,28 @@ export async function raiseTicketAction(input: unknown): Promise<RaiseResult> {
       } else console.error(`[builder] ask ${r.error}`);
     }
     return { ok: true as const, id: saved.id, asked, notConnected };
+  });
+}
+
+export type FinishResult = { ok: true; reviewPath: string } | { ok: false; error: "not_found" | "not_matched" | "already_reviewed" | "invalid" } | Failure;
+
+// The builder's last step: once their ticket is matched, they mark the work as
+// finished and get a one-time review link for the chosen contractor. Only the
+// builder who raised the ticket can do this. Completing an already-completed
+// job is skipped, so pressing the button twice is safe.
+export async function finishAndReviewAction(requestId: unknown): Promise<FinishResult> {
+  return guarded("finish", async () => {
+    const builder = await currentBuilder();
+    if (!builder) return { ok: false as const, error: "not_registered" as const };
+    if (typeof requestId !== "string" || demoState().ticketBuilder[requestId] !== builder.id) return { ok: false as const, error: "not_found" as const };
+    const sheet = getContractorSheet();
+    const env = { recordType: getRecordType(), today: todayInIndia() };
+    const job = (await loadJobs(sheet, env.recordType)).find((j) => j.requestId === requestId);
+    if (!job || job.status === "cancelled") return { ok: false as const, error: "not_matched" as const };
+    const done = await completeJob(sheet, { requestId, completionDate: env.today }, env);
+    if (!done.ok && done.error !== "not_in_progress") return { ok: false as const, error: "invalid" as const };
+    const invite = await createInvite(sheet, { requestId }, env, () => newId("V"));
+    if (!invite.ok) return { ok: false as const, error: invite.error === "already_reviewed" ? ("already_reviewed" as const) : ("invalid" as const) };
+    return { ok: true as const, reviewPath: `/review/${invite.token}` };
   });
 }

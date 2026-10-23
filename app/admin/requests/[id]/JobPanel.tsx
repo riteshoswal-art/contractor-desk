@@ -6,6 +6,8 @@ import { formatDate } from "@/lib/match";
 import { INVITE_STATE_TEXT, type InviteState } from "@/lib/invite";
 import { JOB_STATUS_LABELS, REASON_MAX, type JobStatus } from "@/lib/job";
 import { languageName } from "@/lib/language";
+import { Icon } from "../../../ui";
+import { Avatar, Notice } from "./detail-ui";
 import {
   cancelJobAction,
   changeContractorAction,
@@ -45,13 +47,6 @@ export type JobPanelProps = {
     translationStatus: string;
   };
 };
-
-const field =
-  "mt-1 block w-full rounded-md border border-zinc-400 bg-white px-3 py-2 text-sm focus:border-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-700/40";
-const button =
-  "rounded-md bg-blue-800 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-900 disabled:opacity-60";
-const quietButton =
-  "rounded-md border border-zinc-400 bg-white px-4 py-2 text-sm font-semibold text-zinc-900 hover:bg-zinc-50 disabled:opacity-60";
 
 const PROBLEMS: Record<string, string> = {
   invalid: "Something was not valid. Nothing was saved.",
@@ -136,25 +131,34 @@ export default function JobPanel(props: JobPanelProps) {
     setBusy(false);
   }
 
-  const err = (key: string) => (errors[key] ? <p className="mt-1 text-sm font-medium text-red-700">{errors[key]}</p> : null);
+  const err = (key: string) => (errors[key] ? <p className="error">{errors[key]}</p> : null);
 
-  return (
-    <section aria-labelledby="job-heading" className="mt-8 rounded-md border border-zinc-300 p-4">
-      <h2 id="job-heading" className="text-lg font-semibold">
-        Job and review
-      </h2>
+  const status =
+    message && (
+      <Notice tone="muted" icon="info" role="status">
+        <b>{message}</b>
+      </Notice>
+    );
 
-      {!job && (
-        <div className="mt-3 space-y-3 text-sm">
-          <p className="text-zinc-700">
-            No contractor has been recorded for this request. When the developer tells you whom they chose, record it here.
-            A contractor whose start date still needs confirmation can only be chosen after you record a confirmation for
-            this request on their card.
-          </p>
-          <label htmlFor="chosen" className="block font-medium">
+  if (!job) {
+    return (
+      <section aria-labelledby="job-heading" className="card empty stack" style={{ ["--gap" as string]: "12px" }}>
+        <span className="ic-box">
+          <Icon name="users" />
+        </span>
+        <h2 id="job-heading" className="h2">
+          <span className="sr-only">Job and review: </span>No contractor recorded yet
+        </h2>
+        <p className="muted" style={{ margin: 0 }}>
+          No contractor has been recorded for this request. When the developer tells you whom they chose, record it here.
+          A contractor whose start date still needs confirmation can only be chosen after you record a confirmation for
+          this request on their card. Only then can contact details be shared.
+        </p>
+        <div className="field" style={{ maxWidth: 480 }}>
+          <label htmlFor="chosen" className="label">
             Contractor the developer chose
           </label>
-          <select id="chosen" value={chosen} onChange={(e) => setChosen(e.target.value)} className={field}>
+          <select id="chosen" value={chosen} onChange={(e) => setChosen(e.target.value)} className="select">
             <option value="">Choose…</option>
             {props.options.map((o) => (
               <option key={o.id} value={o.id} disabled={!o.selectable}>
@@ -163,125 +167,151 @@ export default function JobPanel(props: JobPanelProps) {
               </option>
             ))}
           </select>
-          <button type="button" disabled={busy || !chosen} className={button} onClick={() => run(() => selectContractorAction(props.requestId, chosen), "Saved. The contractor is recorded for this job.")}>
+        </div>
+        <div>
+          <button type="button" disabled={busy || !chosen} className="btn btn-primary" onClick={() => run(() => selectContractorAction(props.requestId, chosen), "Saved. The contractor is recorded for this job.")}>
             {busy ? "Saving…" : "Record this contractor"}
           </button>
         </div>
-      )}
+        {status}
+      </section>
+    );
+  }
 
-      {job && (
-        <div className="mt-3 space-y-4 text-sm">
-          <dl className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-1">
-            <dt className="text-zinc-600">Status</dt>
-            <dd className="font-medium">{JOB_STATUS_LABELS[job.status]}</dd>
-            <dt className="text-zinc-600">Contractor</dt>
-            <dd>{job.contractorLabel}</dd>
-            {job.status === "completed" && (
-              <>
-                <dt className="text-zinc-600">Completed on</dt>
-                <dd>{job.completionDate ? formatDate(job.completionDate) : "Date not recorded"}</dd>
-              </>
-            )}
-          </dl>
+  const steps: [string, boolean][] =
+    job.status === "cancelled"
+      ? [["Selected", true], ["Cancelled", true]]
+      : [["Selected", true], ["Completed", job.status === "completed"], ["Reviewed", Boolean(props.review)]];
+  const pill =
+    job.status === "completed"
+      ? "pill-ok"
+      : job.status === "cancelled"
+        ? "pill-muted"
+        : "pill-dark";
 
-          {job.status !== "cancelled" && (
-            <div className="space-y-2 rounded-md bg-zinc-50 p-3">
-              <p className="font-medium">Contact details for the developer</p>
-              <p className="text-zinc-700">
-                The chosen contractor&apos;s details are shown only here, only for this job, and each time you show them
-                it is recorded in the job history. The app sends nothing: you pass them on yourself.
-                {job.contactShareCount > 0 && ` Shown ${job.contactShareCount} time${job.contactShareCount === 1 ? "" : "s"} so far, last on ${formatDate(job.lastContactShareAt)}.`}
-              </p>
-              <button type="button" disabled={busy} className={quietButton} onClick={showContact}>
-                Show contact details
-              </button>
-              {contact && (
-                <div role="status" className="rounded-md border border-amber-300 bg-amber-50 p-3">
-                  <p className="font-medium">{contact.name}</p>
-                  {contact.phone ? (
-                    <p className="font-mono">{contact.phone}</p>
-                  ) : (
-                    <p className="text-zinc-700">
-                      This is a TEST record, so its phone number is not read or shown here. Real numbers are shown only for
-                      REAL records on a server set up for real data.
-                    </p>
-                  )}
-                </div>
-              )}
+  return (
+    <section aria-labelledby="job-heading" className="stack" style={{ ["--gap" as string]: "16px" }}>
+      {status}
+      <div className="job-grid">
+        <div className="card stack" style={{ ["--gap" as string]: "18px" }}>
+          <div className="row between wrap">
+            <h2 id="job-heading" className="eyebrow" style={{ margin: 0 }}>
+              Job and review
+            </h2>
+            <span className={`pill ${pill}`}>{JOB_STATUS_LABELS[job.status]}</span>
+          </div>
+          <div className="row">
+            <Avatar name={job.contractorLabel} />
+            <div style={{ minWidth: 0 }}>
+              <div className="h2">{job.contractorLabel}</div>
+              <div className="small muted">
+                {job.status === "completed"
+                  ? `Completed on ${job.completionDate ? formatDate(job.completionDate) : "a date not recorded"}`
+                  : job.status === "cancelled"
+                    ? "This job was cancelled"
+                    : "Chosen contractor"}
+              </div>
             </div>
-          )}
+          </div>
+          <ol className="progress" aria-label="Job progress">
+            {steps.map(([label, on]) => (
+              <li key={label} className={on ? "on" : ""}>
+                <i></i>
+                <span>
+                  {label}
+                  <span className="sr-only">{on ? " (done)" : " (not yet)"}</span>
+                </span>
+              </li>
+            ))}
+          </ol>
 
           {job.status === "selected" && (
-            <div className="space-y-4">
-              <div className="space-y-2 rounded-md bg-zinc-50 p-3">
-                <label htmlFor="completion" className="block font-medium">
-                  Mark as completed <span className="font-normal text-zinc-600">(completion date is optional)</span>
+            <div className="stack" style={{ ["--gap" as string]: "10px" }}>
+              <div className="field">
+                <label htmlFor="completion" className="label">
+                  Mark as completed <span className="opt">(completion date is optional)</span>
                 </label>
-                <input id="completion" type="date" max={props.today} value={date} onChange={(e) => setDate(e.target.value)} className={field} />
+                <input id="completion" type="date" max={props.today} value={date} onChange={(e) => setDate(e.target.value)} className="input" />
                 {err("completionDate")}
-                <button type="button" disabled={busy} className={button} onClick={() => run(() => completeJobAction(props.requestId, date), "Saved. The job is marked completed.")}>
-                  Mark completed
+              </div>
+              <div>
+                <button type="button" disabled={busy} className="btn btn-primary" onClick={() => run(() => completeJobAction(props.requestId, date), "Saved. The job is marked completed.")}>
+                  <Icon name="check" size={16} /> Mark completed
                 </button>
               </div>
 
-              <div className="space-y-2 rounded-md bg-zinc-50 p-3">
-                <label htmlFor="reason" className="block font-medium">
-                  Reason <span className="font-normal text-zinc-600">(needed to cancel or change the contractor, max {REASON_MAX} characters, no phone numbers)</span>
-                </label>
-                <input id="reason" type="text" maxLength={REASON_MAX} value={reason} onChange={(e) => setReason(e.target.value)} className={field} />
-                {err("reason")}
-                <div className="flex flex-wrap gap-2">
-                  <button type="button" disabled={busy} className={quietButton} onClick={() => run(() => cancelJobAction(props.requestId, reason), "Saved. The job is cancelled.")}>
-                    Cancel the job
-                  </button>
+              <details>
+                <summary className="btn btn-quiet" style={{ display: "inline-flex" }}>
+                  Cancel the job or change the contractor
+                </summary>
+                <div className="card flat tint stack" style={{ ["--gap" as string]: "10px", padding: 16, marginTop: 6 }}>
+                  <div className="field">
+                    <label htmlFor="reason" className="label">
+                      Reason <span className="opt">(needed to cancel or change the contractor, max {REASON_MAX} characters, no phone numbers)</span>
+                    </label>
+                    <input id="reason" type="text" maxLength={REASON_MAX} value={reason} onChange={(e) => setReason(e.target.value)} className="input" />
+                    {err("reason")}
+                  </div>
+                  <div>
+                    <button type="button" disabled={busy} className="btn btn-ghost" onClick={() => run(() => cancelJobAction(props.requestId, reason), "Saved. The job is cancelled.")}>
+                      Cancel the job
+                    </button>
+                  </div>
+                  <div className="field">
+                    <label htmlFor="change" className="label">
+                      Change the contractor instead
+                    </label>
+                    <select id="change" value={changeTo} onChange={(e) => setChangeTo(e.target.value)} className="select">
+                      <option value="">Choose…</option>
+                      {props.options
+                        .filter((o) => o.id !== job.contractorId)
+                        .map((o) => (
+                          <option key={o.id} value={o.id} disabled={!o.selectable}>
+                            {o.label}
+                            {o.why ? ` — ${o.why}` : ""}
+                          </option>
+                        ))}
+                    </select>
+                  </div>
+                  <div>
+                    <button type="button" disabled={busy || !changeTo} className="btn btn-ghost" onClick={() => run(() => changeContractorAction(props.requestId, changeTo, reason), "Saved. The contractor was changed (the earlier choice stays in the history).")}>
+                      Change contractor
+                    </button>
+                  </div>
                 </div>
-                <label htmlFor="change" className="mt-2 block font-medium">
-                  Change the contractor instead
-                </label>
-                <select id="change" value={changeTo} onChange={(e) => setChangeTo(e.target.value)} className={field}>
-                  <option value="">Choose…</option>
-                  {props.options
-                    .filter((o) => o.id !== job.contractorId)
-                    .map((o) => (
-                      <option key={o.id} value={o.id} disabled={!o.selectable}>
-                        {o.label}
-                        {o.why ? ` — ${o.why}` : ""}
-                      </option>
-                    ))}
-                </select>
-                <button type="button" disabled={busy || !changeTo} className={quietButton} onClick={() => run(() => changeContractorAction(props.requestId, changeTo, reason), "Saved. The contractor was changed (the earlier choice stays in the history).")}>
-                  Change contractor
-                </button>
-              </div>
+              </details>
             </div>
           )}
 
           {job.status === "completed" && (
-            <div className="space-y-2 rounded-md bg-zinc-50 p-3">
-              <p className="font-medium">Review</p>
+            <div className="stack" style={{ ["--gap" as string]: "10px" }}>
+              <span className="eyebrow">Review</span>
               {props.review ? (
                 <ReviewDetails review={props.review} />
               ) : (
                 <>
-                  <p className="text-zinc-700">
+                  <p className="small muted" style={{ margin: 0 }}>
                     Awaiting a review.{" "}
                     {props.invite.state === "none"
                       ? "No invitation has been created yet."
                       : `Latest invitation: ${INVITE_STATE_TEXT[props.invite.state]} (created ${formatDate(props.invite.createdAt)}, valid until ${formatDate(props.invite.expiresAt)}).`}
                   </p>
-                  <button type="button" disabled={busy} className={button} onClick={() => run(() => createInviteAction(props.requestId), "Invitation link created. Copy it now.")}>
-                    {props.invite.state === "none" ? "Create review invitation link" : "Create a new invitation link (replaces the old one)"}
-                  </button>
-                  <p className="text-zinc-600">
+                  <div>
+                    <button type="button" disabled={busy} className="btn btn-primary" onClick={() => run(() => createInviteAction(props.requestId), "Invitation link created. Copy it now.")}>
+                      <Icon name="star" size={16} />
+                      {props.invite.state === "none" ? "Create review invitation link" : "Create a new invitation link (replaces the old one)"}
+                    </button>
+                  </div>
+                  <p className="help" style={{ margin: 0 }}>
                     This creates a private link for the developer. The app does <strong>not</strong> send it: you pass it on yourself.
                   </p>
                 </>
               )}
               {link && (
-                <div role="status" className="rounded-md border border-amber-300 bg-amber-50 p-3">
-                  <p className="font-medium">Copy this link now. It is shown only once.</p>
-                  <input readOnly value={link.url} onFocus={(e) => e.currentTarget.select()} className={`${field} font-mono`} aria-label="Review invitation link" />
-                  <p className="mt-1 text-zinc-700">
+                <div role="status" className="notice notice-warn" style={{ display: "block" }}>
+                  <b>Copy this link now. It is shown only once.</b>
+                  <input readOnly value={link.url} onFocus={(e) => e.currentTarget.select()} className="input mono" style={{ marginTop: 8 }} aria-label="Review invitation link" />
+                  <p className="small" style={{ margin: "8px 0 0" }}>
                     It works once, for this job only, and stops working on {formatDate(link.expiresAt)}. Nothing has been sent to the developer.
                   </p>
                 </div>
@@ -290,80 +320,132 @@ export default function JobPanel(props: JobPanelProps) {
           )}
 
           {(job.status === "completed" || job.status === "cancelled") && (
-            <details className="rounded-md border border-zinc-300 p-3">
-              <summary className="cursor-pointer font-medium text-blue-800">Correct the outcome (explicit, with a reason)</summary>
-              <div className="mt-2 space-y-2">
-                <label htmlFor="correctTo" className="block font-medium">
-                  Change it to
-                </label>
-                <select id="correctTo" value={correctTo} onChange={(e) => setCorrectTo(e.target.value as "completed" | "cancelled")} className={field}>
-                  <option value="completed">Completed</option>
-                  <option value="cancelled">Cancelled</option>
-                </select>
+            <details>
+              <summary className="btn btn-quiet" style={{ display: "inline-flex" }}>
+                Correct the outcome (explicit, with a reason)
+              </summary>
+              <div className="card flat tint stack" style={{ ["--gap" as string]: "10px", padding: 16, marginTop: 6 }}>
+                <div className="field">
+                  <label htmlFor="correctTo" className="label">
+                    Change it to
+                  </label>
+                  <select id="correctTo" value={correctTo} onChange={(e) => setCorrectTo(e.target.value as "completed" | "cancelled")} className="select">
+                    <option value="completed">Completed</option>
+                    <option value="cancelled">Cancelled</option>
+                  </select>
+                </div>
                 {correctTo === "completed" && (
-                  <>
-                    <label htmlFor="correctDate" className="block font-medium">
-                      Completion date <span className="font-normal text-zinc-600">(optional)</span>
+                  <div className="field">
+                    <label htmlFor="correctDate" className="label">
+                      Completion date <span className="opt">(optional)</span>
                     </label>
-                    <input id="correctDate" type="date" max={props.today} value={date} onChange={(e) => setDate(e.target.value)} className={field} />
+                    <input id="correctDate" type="date" max={props.today} value={date} onChange={(e) => setDate(e.target.value)} className="input" />
                     {err("completionDate")}
-                  </>
+                  </div>
                 )}
-                <label htmlFor="correctReason" className="block font-medium">
-                  Reason (required)
-                </label>
-                <input id="correctReason" type="text" maxLength={REASON_MAX} value={reason} onChange={(e) => setReason(e.target.value)} className={field} />
-                {err("reason")}
-                <button type="button" disabled={busy} className={quietButton} onClick={() => run(() => correctJobAction(props.requestId, correctTo, date, reason), "Saved. The correction is recorded; the earlier outcome stays in the history.")}>
-                  Record correction
-                </button>
-                <p className="text-zinc-600">A cancelled job&apos;s review (if any) stops counting toward the contractor&apos;s rating.</p>
+                <div className="field">
+                  <label htmlFor="correctReason" className="label">
+                    Reason (required)
+                  </label>
+                  <input id="correctReason" type="text" maxLength={REASON_MAX} value={reason} onChange={(e) => setReason(e.target.value)} className="input" />
+                  {err("reason")}
+                </div>
+                <div>
+                  <button type="button" disabled={busy} className="btn btn-ghost" onClick={() => run(() => correctJobAction(props.requestId, correctTo, date, reason), "Saved. The correction is recorded; the earlier outcome stays in the history.")}>
+                    Record correction
+                  </button>
+                </div>
+                <p className="help" style={{ margin: 0 }}>A cancelled job&apos;s review (if any) stops counting toward the contractor&apos;s rating.</p>
               </div>
             </details>
           )}
-
-          <details>
-            <summary className="cursor-pointer text-blue-800">History ({job.history.length} entries, nothing is ever overwritten)</summary>
-            <ol className="mt-2 list-decimal space-y-1 pl-5 text-zinc-700">
-              {job.history.map((h, i) => (
-                <li key={i}>
-                  {h.event.replace("_", " ")} — {h.contractorLabel}
-                  {h.completionDate ? `, completed ${formatDate(h.completionDate)}` : ""} — {formatDate(h.recordedAt)}
-                  {h.reason ? ` — reason: ${h.reason}` : ""}
-                </li>
-              ))}
-            </ol>
-          </details>
         </div>
-      )}
 
-      {message && (
-        <p role="status" className="mt-3 text-sm font-medium text-zinc-900">
-          {message}
-        </p>
-      )}
+        <div className="card stack" style={{ ["--gap" as string]: "14px" }}>
+          {job.status !== "cancelled" && (
+            <>
+              <span className="eyebrow">Contact details for the developer</span>
+              <p className="small muted" style={{ margin: 0 }}>
+                The chosen contractor&apos;s details are shown only here, only for this job, and each time you show them
+                it is recorded in the job history. The app sends nothing: you pass them on yourself.
+                {job.contactShareCount > 0 && ` Shown ${job.contactShareCount} time${job.contactShareCount === 1 ? "" : "s"} so far, last on ${formatDate(job.lastContactShareAt)}.`}
+              </p>
+              {contact ? (
+                <div role="status" className="notice notice-warn" style={{ display: "block" }}>
+                  <b>{contact.name}</b>
+                  {contact.phone ? (
+                    <p className="mono" style={{ margin: "4px 0 0", fontSize: "1rem" }}>{contact.phone}</p>
+                  ) : (
+                    <p className="small" style={{ margin: "4px 0 0" }}>
+                      This is a TEST record, so its phone number is not read or shown here. Real numbers are shown only for
+                      REAL records on a server set up for real data.
+                    </p>
+                  )}
+                </div>
+              ) : null}
+              <div>
+                <button type="button" disabled={busy} className="btn btn-ghost" onClick={showContact}>
+                  <Icon name="lock" size={16} /> Show contact details
+                </button>
+              </div>
+              <hr className="divider" style={{ margin: "4px 0" }} />
+            </>
+          )}
+          <div className="row between wrap">
+            <span className="eyebrow">History</span>
+            <span className="tiny muted">
+              {job.history.length} entries, nothing is ever overwritten
+            </span>
+          </div>
+          <ol className="history">
+            {job.history.map((h, i) => (
+              <li key={i}>
+                <span>
+                  {h.event.replace("_", " ")} · {h.contractorLabel}
+                  {h.completionDate ? `, completed ${formatDate(h.completionDate)}` : ""}
+                </span>
+                <span className="tiny muted">
+                  {formatDate(h.recordedAt)}
+                  {h.reason ? ` · reason: ${h.reason}` : ""}
+                </span>
+              </li>
+            ))}
+          </ol>
+        </div>
+      </div>
     </section>
   );
 }
 
 function ReviewDetails({ review }: { review: NonNullable<JobPanelProps["review"]> }) {
   return (
-    <div className="space-y-1 text-zinc-800">
-      <p>
-        Review received {formatDate(review.submittedAt)}. Overall <strong>{review.overall} / 5</strong>. Workmanship: {score(review.workmanship)}; punctuality: {score(review.punctuality)}; communication: {score(review.communication)}.
+    <div className="stack" style={{ ["--gap" as string]: "8px" }}>
+      <p className="small" style={{ margin: 0 }}>
+        <span className="rating">
+          <span className="star-i">
+            <Icon name="star" size={15} />
+          </span>
+          Review received {formatDate(review.submittedAt)}. Overall <strong>{review.overall} / 5</strong>.
+        </span>{" "}
+        <span className="muted">
+          Workmanship: {score(review.workmanship)}; punctuality: {score(review.punctuality)}; communication: {score(review.communication)}.
+        </span>
       </p>
       {review.comment && (
-        <p className="whitespace-pre-wrap">
-          <span className="font-medium">Written feedback ({languageName(review.commentLanguage)}, as written):</span> {review.comment}
+        <p className="quote whitespace-pre-wrap" style={{ margin: 0 }} lang={review.commentLanguage || undefined}>
+          &ldquo;{review.comment}&rdquo;
+          <span className="meta" lang="en">
+            Written feedback ({languageName(review.commentLanguage)}, as written)
+          </span>
         </p>
       )}
       {review.comment && review.commentEnglish && (
-        <p className="whitespace-pre-wrap">
-          <span className="font-medium">English version:</span> {review.commentEnglish}
+        <p className="small whitespace-pre-wrap" style={{ margin: 0 }}>
+          <b>English version:</b> {review.commentEnglish}
         </p>
       )}
       {review.comment && !review.commentEnglish && review.translationStatus === "pending" && (
-        <p className="text-zinc-600">English version pending: no translation service is connected.</p>
+        <p className="help" style={{ margin: 0 }}>English version pending: no translation service is connected.</p>
       )}
     </div>
   );

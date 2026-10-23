@@ -21,7 +21,7 @@ export const metadata: Metadata = { title: "Jobs and reviews | Contractor Desk" 
 // before any of this is read.
 export default function ReviewsPage() {
   return (
-    <Suspense fallback={<p className="p-6 text-sm">Loading…</p>}>
+    <Suspense fallback={<p className="page small muted">Loading…</p>}>
       <AdminShell>
         <Overview />
       </AdminShell>
@@ -29,8 +29,7 @@ export default function ReviewsPage() {
   );
 }
 
-const th = "border-b border-zinc-300 px-2 py-2 text-left font-medium text-zinc-700";
-const td = "border-b border-zinc-200 px-2 py-2 align-top";
+const JOB_TONE: Record<Job["status"], string> = { selected: "pill-dark", completed: "pill-ok", cancelled: "pill-muted" };
 const score = (n: number | null) => (n === null ? "—" : String(n));
 
 async function Overview() {
@@ -65,7 +64,7 @@ async function Overview() {
       error instanceof NotConfiguredError ? "sheets_not_configured" : error instanceof SheetSetupError ? "sheets_header_mismatch" : "sheets_request_failed";
     console.error(`[admin/reviews] ${label}`);
     return (
-      <p role="alert" className="mt-6 rounded-md border border-red-300 bg-red-50 p-4 text-sm text-red-900">
+      <p role="alert" className="notice notice-warn">
         {error instanceof NotConfiguredError ? "Google Sheets is not set up on this server yet." : "Could not read the Sheet. Check the setup and try again."}
       </p>
     );
@@ -77,20 +76,25 @@ async function Overview() {
 
   return (
     <>
-      <h1 className="mt-6 text-2xl font-semibold tracking-tight">Jobs and reviews</h1>
-      <p className="mt-2 text-sm text-zinc-700">
-        Jobs are created on a request&apos;s page, where you record the contractor the developer chose and later mark the job
-        completed or cancelled. Reviews come only from developers you invite after a job is completed.
-      </p>
+      <div className="page-head">
+        <span className="eyebrow">Operator</span>
+        <h1 className="h1" style={{ marginTop: 4 }}>
+          Jobs and reviews
+        </h1>
+        <p className="lead-sm" style={{ marginTop: 8, maxWidth: 760 }}>
+          Jobs are created on a request&apos;s page, where you record the contractor the developer chose and later mark the job
+          completed or cancelled. Reviews come only from developers you invite after a job is completed.
+        </p>
+      </div>
 
       {missing.length > 0 && (
-        <p role="status" className="mt-4 rounded-md border border-amber-300 bg-amber-50 p-3 text-sm text-amber-950">
+        <p role="status" className="notice notice-warn" style={{ marginBottom: 20 }}>
           Not set up in the Sheet yet: {missing.map((t) => `"${t}"`).join(", ")}. Nothing below can be recorded or shown for{" "}
           {missing.length === 1 ? "this tab" : "these tabs"} until it exists. See the README, section &ldquo;One-time Sheet setup&rdquo;.
         </p>
       )}
 
-      <dl className="mt-6 grid grid-cols-2 gap-3 text-sm sm:grid-cols-3">
+      <dl className="grid grid-3" style={{ margin: "0 0 16px" }}>
         {[
           ["Jobs recorded", rows.length],
           ["In progress", count((r) => r.job.status === "selected")],
@@ -99,132 +103,161 @@ async function Overview() {
           ["Completed, awaiting an invitation", count((r) => r.awaitingInvitation)],
           ["Reviews received", count((r) => r.review !== null)],
         ].map(([label, value]) => (
-          <div key={label as string} className="rounded-md border border-zinc-300 p-3">
-            <dt className="text-zinc-600">{label}</dt>
-            <dd className="text-xl font-semibold">{value}</dd>
+          <div key={label as string} className="card stat">
+            <dt className="small muted">{label}</dt>
+            <dd className="stat-n" style={{ margin: 0 }}>
+              {value}
+            </dd>
           </div>
         ))}
       </dl>
 
-      <h2 className="mt-8 text-lg font-semibold">Jobs</h2>
-      {rows.length === 0 ? (
-        <p className="mt-2 rounded-md border border-zinc-300 bg-zinc-50 p-4 text-sm">
-          No job has been recorded yet. Open a request and use &ldquo;Job and review&rdquo; to record the contractor the developer
-          chose.
-        </p>
-      ) : (
-        <div className="mt-2 overflow-x-auto">
-          <table className="w-full min-w-[40rem] border-collapse text-sm">
-            <thead>
-              <tr>
-                <th className={th}>Request</th>
-                <th className={th}>Contractor</th>
-                <th className={th}>Outcome</th>
-                <th className={th}>Review invitation</th>
-                <th className={th}>Review</th>
-              </tr>
-            </thead>
-            <tbody>
-              {rows.map((r) => (
-                <tr key={r.job.id}>
-                  <td className={td}>
-                    <Link href={`/admin/requests/${r.job.requestId}`} className="font-mono text-blue-800 underline">
-                      {r.job.requestId}
-                    </Link>
-                    <div className="text-zinc-600">{r.trade} in {r.area}</div>
-                  </td>
-                  <td className={td}>
-                    {r.contractorName || "Name not given"}
-                    <div className="font-mono text-zinc-600">{r.job.contractorId}</div>
-                  </td>
-                  <td className={td}>
-                    {JOB_STATUS_LABELS[r.job.status]}
-                    {r.job.status === "completed" && (
-                      <div className="text-zinc-600">{r.job.completionDate ? formatDate(r.job.completionDate) : "date not recorded"}</div>
-                    )}
-                    <div className="text-zinc-600">{r.job.history.length} change{r.job.history.length === 1 ? "" : "s"} recorded</div>
-                  </td>
-                  <td className={td}>
-                    {r.job.status !== "completed"
-                      ? "Not applicable"
-                      : r.invite.state === "none"
-                        ? "None created yet"
-                        : INVITE_STATE_TEXT[r.invite.state]}
-                    {r.awaitingInvitation && <div className="font-medium text-amber-900">Needs an invitation</div>}
-                  </td>
-                  <td className={td}>
-                    {r.review ? (
-                      <details>
-                        <summary className="cursor-pointer text-blue-800">Received: {r.review.overall} / 5</summary>
-                        <div className="mt-1 space-y-1">
-                          <p>
-                            Workmanship {score(r.review.workmanship)}, punctuality {score(r.review.punctuality)}, communication {score(r.review.communication)}.
-                          </p>
-                          {r.review.comment && (
-                            <p className="whitespace-pre-wrap">
-                              <span className="font-medium">Feedback ({languageName(r.review.commentLanguage)}, as written):</span> {r.review.comment}
-                            </p>
-                          )}
-                          {r.review.comment && r.review.commentEnglish && (
-                            <p className="whitespace-pre-wrap">
-                              <span className="font-medium">English version:</span> {r.review.commentEnglish}
-                            </p>
-                          )}
-                          {r.review.comment && !r.review.commentEnglish && <p className="text-zinc-600">English version pending.</p>}
-                          <p className="text-zinc-600">Submitted {formatDate(r.review.submittedAt)}</p>
-                        </div>
-                      </details>
-                    ) : r.job.status === "completed" ? (
-                      "Awaiting"
-                    ) : (
-                      "—"
-                    )}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+      <section className="card flat" style={{ padding: "20px 8px 0" }}>
+        <div className="row between wrap" style={{ padding: "0 12px 8px" }}>
+          <h2 className="h2">Jobs</h2>
+          <span className="pill pill-muted plain">{rows.length}</span>
         </div>
-      )}
-
-      <h2 className="mt-8 text-lg font-semibold">Contractor ratings</h2>
-      <p className="mt-1 text-sm text-zinc-700">
-        Plain averages of real reviews of completed jobs, always shown with the number of reviews. Fewer than three reviews is
-        marked &ldquo;too few to judge&rdquo;. A contractor with no reviews is &ldquo;Not yet rated&rdquo;, not a low score.
-      </p>
-      {ratings.length === 0 ? (
-        <p className="mt-2 rounded-md border border-zinc-300 bg-zinc-50 p-4 text-sm">No contractor has a review yet.</p>
-      ) : (
-        <div className="mt-2 overflow-x-auto">
-          <table className="w-full min-w-[34rem] border-collapse text-sm">
-            <thead>
-              <tr>
-                <th className={th}>Contractor</th>
-                <th className={th}>Rating</th>
-                <th className={th}>Workmanship</th>
-                <th className={th}>Punctuality</th>
-                <th className={th}>Communication</th>
-              </tr>
-            </thead>
-            <tbody>
-              {ratings.map((r) => (
-                <tr key={r.contractorId}>
-                  <td className={td}>
-                    {r.contractorName || "Name not given"}
-                    <div className="font-mono text-zinc-600">{r.contractorId}</div>
-                  </td>
-                  <td className={td}>{ratingText(r.summary)}</td>
-                  {(["workmanship", "punctuality", "communication"] as const).map((k) => (
-                    <td key={k} className={td}>
-                      {r.summary.criteria[k].average === null ? "—" : `${r.summary.criteria[k].average!.toFixed(1)} (${r.summary.criteria[k].count})`}
+        {rows.length === 0 ? (
+          <p className="notice notice-muted" style={{ margin: "4px 12px 20px" }}>
+            No job has been recorded yet. Open a request and use &ldquo;Job and review&rdquo; to record the contractor the developer
+            chose.
+          </p>
+        ) : (
+          <div className="table-wrap">
+            <table className="table" style={{ minWidth: "40rem" }}>
+              <thead>
+                <tr>
+                  <th>Request</th>
+                  <th>Contractor</th>
+                  <th>Outcome</th>
+                  <th>Review invitation</th>
+                  <th>Review</th>
+                </tr>
+              </thead>
+              <tbody>
+                {rows.map((r) => (
+                  <tr key={r.job.id} style={{ cursor: "default" }}>
+                    <td style={{ verticalAlign: "top" }}>
+                      <Link href={`/admin/requests/${r.job.requestId}`} className="h3 block" style={{ color: "var(--ink)", textDecoration: "none" }}>
+                        {r.trade} in {r.area}
+                      </Link>
+                      <div className="mono muted">{r.job.requestId}</div>
                     </td>
-                  ))}
-                </tr>
-              ))}
-            </tbody>
-          </table>
+                    <td style={{ verticalAlign: "top" }}>
+                      {r.contractorName || "Name not given"}
+                      <div className="mono muted">{r.job.contractorId}</div>
+                    </td>
+                    <td style={{ verticalAlign: "top" }}>
+                      <span className={`pill ${JOB_TONE[r.job.status]}`}>{JOB_STATUS_LABELS[r.job.status]}</span>
+                      {r.job.status === "completed" && (
+                        <div className="small muted" style={{ marginTop: 4 }}>
+                          {r.job.completionDate ? formatDate(r.job.completionDate) : "date not recorded"}
+                        </div>
+                      )}
+                      <div className="tiny muted" style={{ marginTop: 2 }}>
+                        {r.job.history.length} change{r.job.history.length === 1 ? "" : "s"} recorded
+                      </div>
+                    </td>
+                    <td style={{ verticalAlign: "top" }}>
+                      {r.job.status !== "completed"
+                        ? "Not applicable"
+                        : r.invite.state === "none"
+                          ? "None created yet"
+                          : INVITE_STATE_TEXT[r.invite.state]}
+                      {r.awaitingInvitation && (
+                        <div style={{ marginTop: 6 }}>
+                          <span className="pill pill-warn">Needs an invitation</span>
+                        </div>
+                      )}
+                    </td>
+                    <td style={{ verticalAlign: "top" }}>
+                      {r.review ? (
+                        <details>
+                          <summary className="cursor-pointer" style={{ fontWeight: 600 }}>
+                            Received: {r.review.overall} / 5
+                          </summary>
+                          <div className="quote stack" style={{ ["--gap" as string]: "4px", marginTop: 6 }}>
+                            <p style={{ margin: 0 }}>
+                              Workmanship {score(r.review.workmanship)}, punctuality {score(r.review.punctuality)}, communication {score(r.review.communication)}.
+                            </p>
+                            {r.review.comment && (
+                              <p className="whitespace-pre-wrap" style={{ margin: 0 }}>
+                                <span style={{ fontWeight: 600 }}>Feedback ({languageName(r.review.commentLanguage)}, as written):</span> {r.review.comment}
+                              </p>
+                            )}
+                            {r.review.comment && r.review.commentEnglish && (
+                              <p className="whitespace-pre-wrap" style={{ margin: 0 }}>
+                                <span style={{ fontWeight: 600 }}>English version:</span> {r.review.commentEnglish}
+                              </p>
+                            )}
+                            {r.review.comment && !r.review.commentEnglish && (
+                              <p className="muted" style={{ margin: 0 }}>
+                                English version pending.
+                              </p>
+                            )}
+                            <p className="tiny muted" style={{ margin: 0 }}>
+                              Submitted {formatDate(r.review.submittedAt)}
+                            </p>
+                          </div>
+                        </details>
+                      ) : r.job.status === "completed" ? (
+                        "Awaiting"
+                      ) : (
+                        "—"
+                      )}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </section>
+
+      <section className="card flat" style={{ padding: "20px 8px 0", marginTop: 16 }}>
+        <div style={{ padding: "0 12px 8px" }}>
+          <h2 className="h2">Contractor ratings</h2>
+          <p className="small muted" style={{ margin: "4px 0 0", maxWidth: 760 }}>
+            Plain averages of real reviews of completed jobs, always shown with the number of reviews. Fewer than three reviews is
+            marked &ldquo;too few to judge&rdquo;. A contractor with no reviews is &ldquo;Not yet rated&rdquo;, not a low score.
+          </p>
         </div>
-      )}
+        {ratings.length === 0 ? (
+          <p className="notice notice-muted" style={{ margin: "4px 12px 20px" }}>
+            No contractor has a review yet.
+          </p>
+        ) : (
+          <div className="table-wrap">
+            <table className="table" style={{ minWidth: "34rem" }}>
+              <thead>
+                <tr>
+                  <th>Contractor</th>
+                  <th>Rating</th>
+                  <th>Workmanship</th>
+                  <th>Punctuality</th>
+                  <th>Communication</th>
+                </tr>
+              </thead>
+              <tbody>
+                {ratings.map((r) => (
+                  <tr key={r.contractorId} style={{ cursor: "default" }}>
+                    <td>
+                      <span className="h3 block">{r.contractorName || "Name not given"}</span>
+                      <div className="mono muted">{r.contractorId}</div>
+                    </td>
+                    <td>{ratingText(r.summary)}</td>
+                    {(["workmanship", "punctuality", "communication"] as const).map((k) => (
+                      <td key={k}>
+                        {r.summary.criteria[k].average === null ? "—" : `${r.summary.criteria[k].average!.toFixed(1)} (${r.summary.criteria[k].count})`}
+                      </td>
+                    ))}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </section>
     </>
   );
 }

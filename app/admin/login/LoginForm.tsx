@@ -10,17 +10,14 @@ export default function LoginForm() {
   );
 
   return (
-    <form action={formAction} className="mt-6 space-y-4">
+    <form action={formAction} className="stack" style={{ ["--gap" as string]: "16px" }}>
       {state?.error && (
-        <div
-          role="alert"
-          className="rounded-md border border-red-300 bg-red-50 p-3 text-sm font-medium text-red-900"
-        >
+        <div role="alert" className="notice notice-warn" style={{ fontWeight: 600 }}>
           {state.error}
         </div>
       )}
-      <div>
-        <label htmlFor="password" className="block text-sm font-medium">
+      <div className="field">
+        <label htmlFor="password" className="label">
           Admin password
         </label>
         <input
@@ -29,13 +26,13 @@ export default function LoginForm() {
           type="password"
           autoComplete="current-password"
           required
-          className="mt-1 block w-full rounded-md border border-zinc-400 bg-white px-3 py-2.5 text-base focus:border-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-700/40"
+          className="input"
         />
       </div>
       <button
         type="submit"
         disabled={pending}
-        className="w-full rounded-md bg-blue-800 px-4 py-3 text-base font-semibold text-white hover:bg-blue-900 disabled:opacity-60 sm:w-auto"
+        className="btn btn-primary btn-block btn-lg"
       >
         {pending ? "Checking…" : "Log in"}
       </button>

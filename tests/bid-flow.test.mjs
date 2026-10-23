@@ -254,7 +254,7 @@ test("the form asks for a price and a unit (required) and notes (optional), and 
   assert.ok(html.includes('id="unit"'));
   for (const u of B.RATE_UNITS) assert.ok(html.includes(`value="${u.value}"`), u.value);
   assert.ok(html.includes("<textarea") && html.includes('maxLength="500"'));
-  assert.equal((html.match(/text-red-700">\*/g) ?? []).length, 2, "price and unit are required, notes are not");
+  assert.equal((html.match(/class="req">\*/g) ?? []).length, 2, "price and unit are required, notes are not");
   assert.ok(html.includes('type="submit"'));
   assert.ok(shown.includes("only one bid") && shown.includes("cannot change it or send another"));
 });
@@ -342,7 +342,7 @@ test("the comparison panel shows each bid with its price and unit, start date st
   assert.deepEqual(missingTabs, []);
   const html = renderToStaticMarkup(createElement(BidPanel, { panel, today: dayStr(0), telegram: TG })); const shown = text(html);
   for (const s of ["Contractor bids", "Bidding is open", "₹20 per square foot", "₹1,500 per day", "Priced per square foot", "Priced per day", "Includes labour",
-    "Not yet rated", "Provisional: start date not confirmed yet", "Can be selected", "Select this bidder", "Cannot be selected yet", "not</strong> comparable"]) {
+    "Not yet rated", "Provisional · date not confirmed", "Can be selected", "Select Asha", "Confirm start date first", "not</strong> comparable"]) {
     assert.ok(shown.includes(s.replace("</strong>", "")) || html.includes(s), s);
   }
   assert.ok(shown.includes("different rate units"));

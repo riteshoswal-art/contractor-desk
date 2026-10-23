@@ -9,6 +9,8 @@ import {
   NotConfiguredError,
 } from "@/lib/google-sheets";
 import AdminShell from "../../../../AdminShell";
+import { Icon } from "../../../../../ui";
+import { Avatar, BackLink, Notice } from "../../detail-ui";
 import ContactComposer from "./ContactComposer";
 
 export const metadata: Metadata = { title: "Prepare message | Contractor Desk" };
@@ -17,7 +19,7 @@ type Props = PageProps<"/admin/requests/[id]/contact/[contractorId]">;
 
 export default function ContactPage(props: Props) {
   return (
-    <Suspense fallback={<p className="p-6 text-sm">Loading…</p>}>
+    <Suspense fallback={<p className="small muted" style={{ padding: 24 }}>Loading…</p>}>
       <AdminShell>
         <ContactContent params={props.params} />
       </AdminShell>
@@ -44,58 +46,67 @@ async function ContactContent({ params }: { params: Props["params"] }) {
           : "sheets_request_failed";
     console.error(`[admin/contact] ${label}`);
     return (
-      <p role="alert" className="mt-6 rounded-md border border-red-300 bg-red-50 p-4 text-sm text-red-900">
-        {error instanceof NotConfiguredError
-          ? "Google Sheets is not set up on this server yet."
-          : "Could not read the Sheet. Check the setup and try again."}
-      </p>
+      <div style={{ marginTop: 24 }}>
+        <Notice tone="warn" icon="info" role="alert">
+          {error instanceof NotConfiguredError
+            ? "Google Sheets is not set up on this server yet."
+            : "Could not read the Sheet. Check the setup and try again."}
+        </Notice>
+      </div>
     );
   }
 
   if (!found) {
     return (
-      <div className="mt-6">
-        <p role="status" className="rounded-md border border-zinc-300 bg-zinc-50 p-4 text-sm">
+      <div className="stack" style={{ marginTop: 24, ["--gap" as string]: "12px" }}>
+        <BackLink href="/admin/requests">Back to requests</BackLink>
+        <Notice tone="muted" icon="info" role="status">
           This contractor is not a current potential match for that request.
-        </p>
-        <Link href="/admin/requests" className="mt-3 inline-block text-sm text-blue-800 underline">
-          &larr; Back to requests
-        </Link>
+        </Notice>
       </div>
     );
   }
 
   const { request, candidate } = found;
   return (
-    <>
-      <Link
-        href={`/admin/requests/${request.id}`}
-        className="mt-6 inline-block text-sm text-blue-800 underline"
-      >
-        &larr; Back to the request
-      </Link>
-      <h1 className="mt-3 text-2xl font-semibold tracking-tight">
-        Prepare a message
-      </h1>
-      <p className="mt-2 text-sm text-zinc-700">
-        For {candidate.name || "a contractor with no name on record"}{" "}
-        <span className="font-mono">{candidate.contractorId}</span> (
-        {candidate.recordType}), about the {request.trade} request in{" "}
-        {request.area}. Availability is not guaranteed, and nothing is sent
-        automatically. You read the message and press send yourself.
-      </p>
-      <ContactComposer requestId={request.id} contractorId={candidate.contractorId} />
-      <p className="mt-8 border-t border-zinc-200 pt-4 text-sm text-zinc-700">
-        After you have pressed send in WhatsApp (or decided not to), come back
-        and{" "}
+    <div style={{ marginTop: 24 }}>
+      <div className="detail-head">
+        <BackLink href={`/admin/requests/${request.id}`}>Back to the request</BackLink>
+        <div className="stack" style={{ ["--gap" as string]: "10px" }}>
+          <div className="row wrap">
+            <span className="mono muted">{request.id}</span>
+            <span className="pill pill-muted plain">
+              <Icon name="chat" size={12} /> Message
+            </span>
+          </div>
+          <h1 className="h1">Prepare a message</h1>
+        </div>
+        <div className="card flat tint row" style={{ alignItems: "flex-start", padding: 16 }}>
+          <Avatar name={candidate.name || "Name not given"} />
+          <p className="small" style={{ margin: 0 }}>
+            For <b>{candidate.name || "a contractor with no name on record"}</b>{" "}
+            <span className="mono muted">{candidate.contractorId}</span> ({candidate.recordType}), about the{" "}
+            {request.trade} request in {request.area}.{" "}
+            <span className="muted">
+              Availability is not guaranteed, and nothing is sent automatically. You read the message and press send
+              yourself.
+            </span>
+          </p>
+        </div>
+      </div>
+      <div className="card" style={{ maxWidth: 720 }}>
+        <ContactComposer requestId={request.id} contractorId={candidate.contractorId} />
+      </div>
+      <p className="small muted" style={{ marginTop: 24, paddingTop: 16, borderTop: "1px solid var(--line)" }}>
+        After you have pressed send in WhatsApp (or decided not to), come back and{" "}
         <Link
           href={`/admin/requests/${request.id}/outcome/${candidate.contractorId}`}
-          className="font-medium text-blue-800 underline"
+          style={{ color: "var(--ink)", fontWeight: 600, textDecoration: "underline" }}
         >
           record what happened
         </Link>
         . Opening the link is not recorded anywhere.
       </p>
-    </>
+    </div>
   );
 }

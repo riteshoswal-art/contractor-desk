@@ -6,6 +6,8 @@ import { formatDate } from "@/lib/match";
 import type { NotifyItem } from "@/lib/notify";
 import { SEND_ERROR_TEXT } from "@/lib/telegram";
 import { notifyMatchesAction, pairingLinkAction, syncConnectionsAction } from "../actions";
+import { Icon } from "../../../ui";
+import { initials } from "../../requests/[id]/detail-ui";
 
 export type MatchRow = {
   id: string;
@@ -20,8 +22,6 @@ export type MatchRow = {
   unavailable: boolean;
 };
 
-const button = "rounded-md bg-blue-800 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-900 disabled:opacity-60";
-const quiet = "rounded-md border border-zinc-400 bg-white px-3 py-1.5 text-sm font-semibold text-zinc-900 hover:bg-zinc-50 disabled:opacity-60";
 
 const REASON: Record<string, string> = {
   already_asked: "already asked on Telegram",
@@ -47,15 +47,15 @@ const problem = (e: string) => PROBLEM[e] ?? (SEND_ERROR_TEXT as Record<string, 
 function noticeText(n: { status: string; detail?: string }): { text: string; tone: string } {
   switch (n.status) {
     case "sent":
-      return { text: "Sent to their Telegram", tone: "bg-green-100 text-green-900" };
+      return { text: "Sent to their Telegram", tone: "pill-ok" };
     case "preview":
-      return { text: "Preview only (not sent)", tone: "bg-amber-100 text-amber-900" };
+      return { text: "Preview only (not sent)", tone: "pill-warn" };
     case "failed":
-      return { text: `Failed: ${(SEND_ERROR_TEXT as Record<string, string>)[n.detail ?? ""] ?? "not sent"}`, tone: "bg-red-100 text-red-900" };
+      return { text: `Failed: ${(SEND_ERROR_TEXT as Record<string, string>)[n.detail ?? ""] ?? "not sent"}`, tone: "pill-warn" };
     case "not_connected":
-      return { text: "Not connected: nothing sent", tone: "bg-zinc-100 text-zinc-700" };
+      return { text: "Not connected: nothing sent", tone: "pill-muted" };
     default:
-      return { text: `Skipped: ${REASON[n.detail ?? ""] ?? n.detail ?? ""}`, tone: "bg-zinc-100 text-zinc-700" };
+      return { text: `Skipped: ${REASON[n.detail ?? ""] ?? n.detail ?? ""}`, tone: "pill-muted" };
   }
 }
 
@@ -106,56 +106,82 @@ export default function MatchesPanel({ requestId, rows, botReady, builderAlertsR
     });
 
   return (
-    <section aria-labelledby="matches-heading" className="mt-8 rounded-md border border-zinc-300 p-4">
-      <div className="flex flex-wrap items-baseline justify-between gap-2">
-        <h2 id="matches-heading" className="text-lg font-semibold">
+    <section aria-labelledby="matches-heading" className="stack" style={{ ["--gap" as string]: "12px" }}>
+      <div className="group-head">
+        <h2 id="matches-heading" className="h2">
           1. Matched contractors and Telegram notifications
         </h2>
-        <p className="text-xs text-zinc-600">
+        <span className="tiny muted">
           Bot: {botReady ? "set up" : "not set up"} · Builder bid alerts: {builderAlertsReady ? "on" : "off (TELEGRAM_FOUNDER_CHAT_ID missing)"}
-        </p>
+        </span>
       </div>
-      <p className="mt-1 text-sm text-zinc-700">
-        Matched by trade, locality, availability and start date. Each available, connected contractor gets the job on Telegram with
-        Yes / No buttons and quotes there. Nothing is sent until you press a button.
+      <p className="notice notice-muted" style={{ margin: 0 }}>
+        <span style={{ marginTop: 2 }}>
+          <Icon name="info" size={18} />
+        </span>
+        <span>
+          Matched by trade, locality, availability and start date. Each available, connected contractor gets the job on
+          Telegram with Yes / No buttons and quotes there. Nothing is sent until you press a button.
+        </span>
       </p>
 
-      {rows.length === 0 && <p className="mt-4 text-sm text-zinc-700">No registered contractor matches this ticket yet.</p>}
+      {rows.length === 0 && (
+        <div className="card empty">
+          <p className="muted" style={{ margin: 0 }}>No registered contractor matches this ticket yet.</p>
+        </div>
+      )}
 
-      <ul className="mt-4 space-y-3">
+      <ul className="stack" style={{ ["--gap" as string]: "12px", listStyle: "none", padding: 0, margin: 0 }}>
         {rows.map((r) => {
           const n = r.notice ? noticeText(r.notice) : null;
           return (
-            <li key={r.id} className="rounded-md border border-zinc-200 p-3 text-sm">
-              <div className="flex flex-wrap items-center justify-between gap-2">
-                <p>
-                  <span className="font-semibold">{r.name || "Name not given"}</span> <span className="font-mono text-xs text-zinc-600">{r.id}</span>
-                </p>
-                <div className="flex flex-wrap gap-2">
-                  <span className={`rounded-full px-2 py-0.5 text-xs font-semibold ${r.fit === "on_date" ? "bg-green-100 text-green-900" : "bg-amber-100 text-amber-900"}`}>{r.fitText}</span>
-                  <span className={`rounded-full px-2 py-0.5 text-xs font-semibold ${r.connected ? "bg-sky-100 text-sky-900" : "bg-zinc-100 text-zinc-700"}`}>
+            <li key={r.id} className="card flat stack" style={{ ["--gap" as string]: "10px", padding: 0 }}>
+              <div className="match-row">
+                <div className="row" style={{ alignItems: "flex-start" }}>
+                  <span className="avatar" aria-hidden="true">
+                    {initials(r.name || "Name not given")}
+                  </span>
+                  <div style={{ minWidth: 0 }}>
+                    <div className="h3">
+                      {r.name || "Name not given"} <span className="mono muted">{r.id}</span>
+                    </div>
+                    <ul className="small muted" style={{ margin: "2px 0 0", padding: 0, listStyle: "none" }}>
+                      {r.reasons.map((reason) => (
+                        <li key={reason}>{reason}</li>
+                      ))}
+                    </ul>
+                  </div>
+                </div>
+                <div className="row wrap" style={{ gap: 8 }}>
+                  <span className={`pill ${r.fit === "on_date" ? "pill-ok" : "pill-warn"}`} style={{ whiteSpace: "normal" }}>{r.fitText}</span>
+                  <span className={`pill plain ${r.connected ? "pill-info" : "pill-muted"}`}>
+                    <Icon name="send" size={12} />
                     {r.connected ? `Telegram connected${r.telegramName ? ` (${r.telegramName})` : ""}` : "Telegram not connected"}
                   </span>
-                  {r.hasBid && <span className="rounded-full bg-blue-100 px-2 py-0.5 text-xs font-semibold text-blue-900">Bid received</span>}
-                  {r.unavailable && <span className="rounded-full bg-red-100 px-2 py-0.5 text-xs font-semibold text-red-900">Said unavailable</span>}
+                  {r.hasBid && <span className="pill pill-muted plain">Bid received</span>}
+                  {r.unavailable && <span className="pill pill-warn">Said unavailable</span>}
+                  <span className="pill pill-muted plain">
+                    <Icon name="lock" size={12} /> Phone hidden
+                  </span>
                 </div>
               </div>
-              <ul className="mt-2 list-disc pl-5 text-zinc-700">
-                {r.reasons.map((reason) => <li key={reason}>{reason}</li>)}
-              </ul>
-              <div className="mt-2 flex flex-wrap items-center gap-2">
-                {n && <span className={`rounded-md px-2 py-1 text-xs font-semibold ${n.tone}`}>Notification: {n.text}</span>}
-                {!r.connected && botReady && (
-                  <button type="button" className={quiet} disabled={busy !== ""} onClick={() => connect(r.id)}>
-                    {busy === `pair-${r.id}` ? "Creating…" : "Create Telegram connect link"}
-                  </button>
-                )}
-              </div>
-              {pairing?.id === r.id && (
-                <div role="status" className="mt-2 rounded-md border border-sky-300 bg-sky-50 p-2">
-                  <p className="font-medium">Give this link to {r.name || "the contractor"} only. They open it on their phone and press Start.</p>
-                  <input readOnly value={pairing.url} onFocus={(e) => e.currentTarget.select()} className="mt-1 block w-full rounded border border-zinc-300 bg-white px-2 py-1 font-mono text-xs" aria-label="Telegram connect link" />
-                  <p className="mt-1 text-xs text-zinc-600">Works once, until {formatDate(pairing.expiresAt)} (30 minutes). Then press &ldquo;Check for new connections&rdquo;.</p>
+              {(n || (!r.connected && botReady) || pairing?.id === r.id) && (
+                <div className="stack" style={{ ["--gap" as string]: "8px", padding: "0 18px 16px" }}>
+                  <div className="row wrap" style={{ gap: 8 }}>
+                    {n && <span className={`pill ${n.tone}`} style={{ whiteSpace: "normal" }}>Notification: {n.text}</span>}
+                    {!r.connected && botReady && (
+                      <button type="button" className="btn btn-ghost" style={{ minHeight: 36 }} disabled={busy !== ""} onClick={() => connect(r.id)}>
+                        {busy === `pair-${r.id}` ? "Creating…" : "Create Telegram connect link"}
+                      </button>
+                    )}
+                  </div>
+                  {pairing?.id === r.id && (
+                    <div role="status" className="notice notice-info" style={{ display: "block" }}>
+                      <b>Give this link to {r.name || "the contractor"} only. They open it on their phone and press Start.</b>
+                      <input readOnly value={pairing.url} onFocus={(e) => e.currentTarget.select()} className="input mono" style={{ marginTop: 8 }} aria-label="Telegram connect link" />
+                      <p className="help">Works once, until {formatDate(pairing.expiresAt)} (30 minutes). Then press &ldquo;Check for new connections&rdquo;.</p>
+                    </div>
+                  )}
                 </div>
               )}
             </li>
@@ -163,35 +189,40 @@ export default function MatchesPanel({ requestId, rows, botReady, builderAlertsR
         })}
       </ul>
 
-      <div className="mt-4 flex flex-wrap gap-2">
-        <button type="button" className={quiet} disabled={busy !== "" || !botReady} onClick={sync}>
+      <div className="row wrap" style={{ gap: 8 }}>
+        <button type="button" className="btn btn-ghost" disabled={busy !== "" || !botReady} onClick={sync}>
           {busy === "sync" ? "Checking…" : "Check for new connections"}
         </button>
-        <button type="button" className={button} disabled={busy !== "" || eligible.length === 0} onClick={notify}>
+        <button type="button" className="btn btn-primary" disabled={busy !== "" || eligible.length === 0} onClick={notify}>
+          <Icon name="send" size={16} />
           {busy === "notify" ? "Sending…" : `Send job to matched contractors (${connectedEligible} connected of ${eligible.length})`}
         </button>
       </div>
-      {message && <p role="status" className="mt-3 text-sm font-medium text-zinc-900">{message}</p>}
+      {message && (
+        <p role="status" className="notice notice-muted" style={{ margin: 0 }}>
+          <b>{message}</b>
+        </p>
+      )}
 
       {results && (
-        <div role="status" className="mt-3 rounded-md border border-zinc-300 p-3 text-sm">
-          <p className="font-medium">Results (only &ldquo;Sent&rdquo; means Telegram confirmed delivery)</p>
-          <ul className="mt-2 space-y-2">
+        <div role="status" className="card stack" style={{ ["--gap" as string]: "10px" }}>
+          <span className="eyebrow">Results (only &ldquo;Sent&rdquo; means Telegram confirmed delivery)</span>
+          <ul className="stack" style={{ ["--gap" as string]: "8px", listStyle: "none", padding: 0, margin: 0 }}>
             {results.map((i) => {
               const n = noticeText({ status: i.status, detail: i.reason ?? i.error });
               return (
-                <li key={i.contractorId}>
-                  <span className="font-medium">{i.name || i.contractorId}</span>: <span className={`rounded px-1.5 py-0.5 text-xs font-semibold ${n.tone}`}>{n.text}</span>
+                <li key={i.contractorId} className="small">
+                  <b>{i.name || i.contractorId}</b>: <span className={`pill ${n.tone}`} style={{ whiteSpace: "normal" }}>{n.text}</span>
                   {i.status === "sent" && i.link && (
-                    <details className="mt-1">
-                      <summary className="cursor-pointer text-blue-800">The link that was sent (for your eyes only)</summary>
-                      <input readOnly value={i.link} onFocus={(e) => e.currentTarget.select()} className="mt-1 block w-full rounded border border-zinc-300 bg-white px-2 py-1 font-mono text-xs" aria-label={`Link sent to ${i.name}`} />
+                    <details style={{ marginTop: 6 }}>
+                      <summary style={{ cursor: "pointer", fontWeight: 600 }}>The link that was sent (for your eyes only)</summary>
+                      <input readOnly value={i.link} onFocus={(e) => e.currentTarget.select()} className="input mono" style={{ marginTop: 6 }} aria-label={`Link sent to ${i.name}`} />
                     </details>
                   )}
                   {i.status === "preview" && i.preview && (
-                    <details className="mt-1">
-                      <summary className="cursor-pointer text-blue-800">Message preview</summary>
-                      <pre className="mt-1 whitespace-pre-wrap rounded bg-zinc-50 p-2 text-xs">{i.preview}</pre>
+                    <details style={{ marginTop: 6 }}>
+                      <summary style={{ cursor: "pointer", fontWeight: 600 }}>Message preview</summary>
+                      <pre className="quote tiny whitespace-pre-wrap" style={{ marginTop: 6 }}>{i.preview}</pre>
                     </details>
                   )}
                 </li>

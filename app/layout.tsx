@@ -1,8 +1,10 @@
 import type { Metadata } from "next";
-import { Inter, Inter_Tight } from "next/font/google";
+import { Inter, Inter_Tight, Noto_Sans_Devanagari } from "next/font/google";
 import "./globals.css";
+import "./concept-b.css";
 
-// Concept B type: Inter for text, Inter Tight for headings.
+// Concept B type: Inter for text, Inter Tight for headings, Noto Sans
+// Devanagari for Hindi and Marathi.
 const inter = Inter({
   variable: "--font-inter",
   subsets: ["latin"],
@@ -13,6 +15,12 @@ const interTight = Inter_Tight({
   subsets: ["latin"],
 });
 
+const notoDeva = Noto_Sans_Devanagari({
+  variable: "--font-noto-deva",
+  subsets: ["devanagari"],
+  weight: ["400", "500", "600", "700"],
+});
+
 export const metadata: Metadata = {
   title: "Contractor Desk",
   description: "Find available contractors for residential projects in Pune.",
@@ -21,7 +29,7 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
-    <html lang="en" className={`${inter.variable} ${interTight.variable} h-full antialiased`}>
+    <html lang="en" className={`${inter.variable} ${interTight.variable} ${notoDeva.variable} h-full antialiased`}>
       <body className="min-h-full flex flex-col">{children}</body>
     </html>
   );

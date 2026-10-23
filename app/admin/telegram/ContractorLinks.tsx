@@ -6,8 +6,8 @@ import { pairingLinkAction } from "../builder/actions";
 
 export type ContractorRow = { id: string; name: string; trade: string; area: string; status: string; connectedAs: string };
 
-const quietButton =
-  "rounded-full border border-[var(--line-strong)] bg-white px-3.5 py-1.5 text-sm font-semibold text-zinc-900 hover:border-[var(--ink)] disabled:opacity-60";
+const quietButton = "btn btn-ghost";
+const small = { minHeight: 36, padding: "0 14px", fontSize: "0.88rem" } as const;
 
 // A one-time Telegram connect link per registered contractor, to send to that
 // contractor so their phone receives job messages. Nothing is sent from here.
@@ -43,41 +43,44 @@ export default function ContractorLinks({ rows }: { rows: ContractorRow[] }) {
   }
 
   return (
-    <section className="space-y-3">
-      <div className="flex flex-wrap items-center justify-between gap-2">
-        <h2 className="text-lg font-semibold">Contractors</h2>
-        <button type="button" className={quietButton} onClick={() => router.refresh()}>
+    <section className="card stack" style={{ ["--gap" as string]: "12px" }}>
+      <div className="row between wrap" style={{ gap: 8 }}>
+        <h2 className="h2">Contractors</h2>
+        <button type="button" className={quietButton} style={small} onClick={() => router.refresh()}>
           Refresh
         </button>
       </div>
-      <p className="text-sm leading-6 text-zinc-600">
+      <p className="small muted" style={{ margin: 0, lineHeight: 1.6 }}>
         Contractors who register on their phone connect Telegram themselves. For anyone else, create their link and send it to them:
         they open it and press <strong>Start</strong>. Each link works once, for 30 minutes.
       </p>
-      {problem && <p role="alert" className="text-sm font-medium text-red-800">{problem}</p>}
-      <ul className="divide-y divide-[var(--line)] overflow-hidden rounded-[20px] border border-[var(--line)]">
+      {problem && <p role="alert" className="notice notice-warn" style={{ fontWeight: 600 }}>{problem}</p>}
+      <ul style={{ listStyle: "none", padding: 0, margin: 0 }}>
         {rows.map((r) => (
-          <li key={r.id} className="space-y-2 px-4 py-3.5">
-            <div className="flex flex-wrap items-center justify-between gap-3">
-              <div>
-                <p className="font-semibold">{r.name || "Name not given"}</p>
-                <p className="text-sm text-zinc-600">
+          <li key={r.id} style={{ padding: "12px 0", borderTop: "1px solid var(--line)" }}>
+            <div className="row between wrap" style={{ gap: 12 }}>
+              <div className="row" style={{ gap: 12, minWidth: 0 }}>
+                <span className="avatar" aria-hidden="true">{(r.name || "?").trim().charAt(0).toUpperCase()}</span>
+                <div style={{ minWidth: 0 }}>
+                <p className="h3" style={{ margin: 0 }}>{r.name || "Name not given"}</p>
+                <p className="small muted" style={{ margin: "2px 0 0" }}>
                   {r.trade}, {r.area} · {r.status}
                 </p>
+                </div>
               </div>
-              <div className="flex items-center gap-2">
-                <span className={`rounded-full px-2.5 py-0.5 text-xs font-semibold ${r.connectedAs ? "bg-[var(--ok-bg)] text-[var(--ok-ink)]" : "bg-[var(--surface-2)] text-zinc-600"}`}>
+              <div className="row" style={{ gap: 8 }}>
+                <span className={`pill ${r.connectedAs ? "pill-ok" : "pill-muted"}`}>
                   {r.connectedAs ? `Connected (${r.connectedAs})` : "Not connected"}
                 </span>
-                <button type="button" className={quietButton} disabled={busy !== ""} onClick={() => make(r.id)}>
+                <button type="button" className={quietButton} style={small} disabled={busy !== ""} onClick={() => make(r.id)}>
                   {busy === r.id ? "Creating…" : r.connectedAs ? "New link" : "Create link"}
                 </button>
               </div>
             </div>
             {link?.id === r.id && (
-              <div className="flex flex-wrap items-center gap-2 rounded-[12px] bg-[var(--surface-2)] p-2.5">
-                <code className="break-all text-xs">{link.url}</code>
-                <button type="button" className={quietButton} onClick={() => copy(link.url)}>
+              <div className="quote row wrap" style={{ gap: 8, marginTop: 10 }}>
+                <code className="mono break-all grow">{link.url}</code>
+                <button type="button" className={quietButton} style={{ ...small, background: "var(--surface)" }} onClick={() => copy(link.url)}>
                   {copied ? "Copied" : "Copy"}
                 </button>
               </div>

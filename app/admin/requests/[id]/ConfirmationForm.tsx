@@ -3,10 +3,8 @@
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { CONFIRMATION_STATUSES, NOTE_MAX } from "@/lib/confirmation";
+import { Icon } from "../../../ui";
 import { saveConfirmationAction } from "./actions";
-
-const field =
-  "mt-1 block w-full rounded-md border border-zinc-400 bg-white px-3 py-2 text-sm focus:border-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-700/40 aria-[invalid=true]:border-red-700";
 
 // Lets the founder record what a contractor said about THIS request, after a
 // call or a reply. It never sends anything and never contacts anyone.
@@ -65,13 +63,14 @@ export default function ConfirmationForm({
   }
 
   return (
-    <details className="mt-3 rounded-md border border-zinc-300 p-3 text-sm">
-      <summary className="cursor-pointer font-medium text-blue-800">
+    <details className="small" style={{ marginTop: 12 }}>
+      <summary className="btn btn-ghost" style={{ display: "inline-flex", minHeight: 40 }}>
+        <Icon name="cal" size={16} />
         Record what they said about this request
       </summary>
-      <form onSubmit={submit} noValidate className="mt-3 space-y-3">
-        <div>
-          <label className="block font-medium" htmlFor={`status-${contractorId}`}>
+      <form onSubmit={submit} noValidate className="card flat tint stack" style={{ ["--gap" as string]: "12px", padding: 16, marginTop: 8 }}>
+        <div className="field">
+          <label className="label" htmlFor={`status-${contractorId}`}>
             Status
           </label>
           <select
@@ -79,7 +78,7 @@ export default function ConfirmationForm({
             value={status}
             onChange={(e) => setStatus(e.target.value)}
             aria-invalid={errors.status ? true : undefined}
-            className={field}
+            className="select"
           >
             <option value="">Choose…</option>
             {CONFIRMATION_STATUSES.map((s) => (
@@ -92,12 +91,12 @@ export default function ConfirmationForm({
               </option>
             ))}
           </select>
-          {errors.status && <p className="mt-1 font-medium text-red-700">{errors.status}</p>}
+          {errors.status && <p className="error">{errors.status}</p>}
         </div>
 
         {status === "available_alternative_date" && (
-          <div>
-            <label className="block font-medium" htmlFor={`date-${contractorId}`}>
+          <div className="field">
+            <label className="label" htmlFor={`date-${contractorId}`}>
               Date they confirmed
             </label>
             <input
@@ -106,17 +105,17 @@ export default function ConfirmationForm({
               value={date}
               onChange={(e) => setDate(e.target.value)}
               aria-invalid={errors.confirmedStartDate ? true : undefined}
-              className={field}
+              className="input"
             />
             {errors.confirmedStartDate && (
-              <p className="mt-1 font-medium text-red-700">{errors.confirmedStartDate}</p>
+              <p className="error">{errors.confirmedStartDate}</p>
             )}
           </div>
         )}
 
-        <div>
-          <label className="block font-medium" htmlFor={`note-${contractorId}`}>
-            Note <span className="font-normal text-zinc-600">(optional, no phone numbers)</span>
+        <div className="field">
+          <label className="label" htmlFor={`note-${contractorId}`}>
+            Note <span className="opt">(optional, no phone numbers)</span>
           </label>
           <input
             id={`note-${contractorId}`}
@@ -125,20 +124,20 @@ export default function ConfirmationForm({
             value={note}
             onChange={(e) => setNote(e.target.value)}
             aria-invalid={errors.note ? true : undefined}
-            className={field}
+            className="input"
           />
-          {errors.note && <p className="mt-1 font-medium text-red-700">{errors.note}</p>}
+          {errors.note && <p className="error">{errors.note}</p>}
         </div>
 
         <button
           type="submit"
           disabled={busy || !status}
-          className="rounded-md bg-blue-800 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-900 disabled:opacity-60"
+          className="btn btn-primary"
         >
           {busy ? "Saving…" : "Save status"}
         </button>
         {message && (
-          <p role="status" className="font-medium text-zinc-800">
+          <p role="status" className="small" style={{ margin: 0, fontWeight: 600 }}>
             {message}
           </p>
         )}

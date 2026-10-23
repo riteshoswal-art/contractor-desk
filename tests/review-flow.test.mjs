@@ -219,7 +219,7 @@ test("the review form has the five fields: one required star rating, three optio
   for (const n of [1, 2, 3, 4, 5]) assert.ok(html.includes(`aria-label="${n} out of 5"`));
   assert.ok(html.includes("<textarea") && html.includes('maxLength="600"'));
   assert.ok(html.includes('type="submit"'));
-  assert.equal((html.match(/text-red-700">\*/g) ?? []).length, 1, "only the overall rating is required");
+  assert.equal((html.match(/class="req">\*/g) ?? []).length, 1, "only the overall rating is required");
 });
 
 test("the form names the job without exposing the contractor, any name or any phone number", () => {

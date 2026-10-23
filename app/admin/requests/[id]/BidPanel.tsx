@@ -3,13 +3,15 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import { NOTES_MAX, RATE_UNITS } from "@/lib/bid";
-import type { BidPanelData, BidView } from "@/lib/bid-overview";
+import { NOTES_MAX, RATE_UNITS, unitInfo } from "@/lib/bid";
+import type { BidPanelData, BidView, PriceGroupView } from "@/lib/bid-overview";
 import { REASON_MAX } from "@/lib/job";
 import { languageName } from "@/lib/language";
 import { formatDate } from "@/lib/match";
 import type { NotifyItem } from "@/lib/notify";
 import { SEND_ERROR_TEXT } from "@/lib/telegram";
+import { Icon } from "../../../ui";
+import { Avatar, Notice } from "./detail-ui";
 import {
   cancelBiddingAction,
   closeBiddingAction,
@@ -25,13 +27,6 @@ import {
   type BidRoundActionResult,
   type SelectBidderActionResult,
 } from "./bid-actions";
-
-const field =
-  "mt-1 block w-full rounded-md border border-zinc-400 bg-white px-3 py-2 text-sm focus:border-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-700/40";
-const button =
-  "rounded-md bg-blue-800 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-900 disabled:opacity-60";
-const quietButton =
-  "rounded-md border border-zinc-400 bg-white px-4 py-2 text-sm font-semibold text-zinc-900 hover:bg-zinc-50 disabled:opacity-60";
 
 const PROBLEMS: Record<string, string> = {
   invalid: "Something was not valid. Nothing was saved.",
@@ -54,6 +49,9 @@ const PROBLEMS: Record<string, string> = {
 };
 
 type AnyResult = BidRoundActionResult | BidCorrectionActionResult | SelectBidderActionResult | BidInviteActionResult;
+// Where the outcome of an action is shown: next to the control that was used.
+type Where = "top" | "invited" | "card";
+type Run = (action: () => Promise<AnyResult>, done: string, at?: Where) => Promise<void>;
 
 export type TelegramStatus = { configured: boolean; testMode: boolean };
 
@@ -67,7 +65,36 @@ const NOTIFY_REASON: Record<string, string> = {
   not_found: "not found",
 };
 
-export default function BidPanel({ panel, today, telegram }: { panel: BidPanelData; today: string; telegram: TelegramStatus }) {
+// Short chip labels for the unit filter (the headings keep the full wording).
+const UNIT_CHIP: Record<string, string> = {
+  per_sqft: "Per sq ft",
+  per_sqm: "Per sq m",
+  per_day: "Per day",
+  per_unit: "Per unit",
+  fixed_scope: "Fixed",
+};
+
+const firstName = (name: string) => (name && name !== "Name not given" ? name.trim().split(/\s+/)[0] : "");
+
+// "₹22 per square foot" -> ["₹22", "per square foot"], so the amount can be set
+// large and the unit small, exactly as the formatted price reads.
+function splitPrice(price: string, unit: string): [string, string] {
+  const label = unitInfo(unit)?.label;
+  if (label && price.endsWith(` ${label}`)) return [price.slice(0, -label.length - 1), label];
+  return [price, ""];
+}
+
+export default function BidPanel({
+  panel,
+  today,
+  telegram,
+  confirmHref = "#matches-heading",
+}: {
+  panel: BidPanelData;
+  today: string;
+  telegram: TelegramStatus;
+  confirmHref?: string; // where "Confirm start date first" leads (the contractor cards)
+}) {
   const router = useRouter();
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState("");
@@ -77,6 +104,8 @@ export default function BidPanel({ panel, today, telegram }: { panel: BidPanelDa
   const [inviteFor, setInviteFor] = useState("");
   const [link, setLink] = useState<{ url: string; expiresAt: string } | null>(null);
   const [notified, setNotified] = useState<NotifyItem[] | null>(null);
+  const [unitFilter, setUnitFilter] = useState("all");
+  const [where, setWhere] = useState<Where>("top");
 
   // DEMO: notify matched contractors through the founder's Telegram demo chat.
   async function notify(ids: string[]) {
@@ -84,6 +113,7 @@ export default function BidPanel({ panel, today, telegram }: { panel: BidPanelDa
     setBusy(true);
     setMessage("");
     setNotified(null);
+    setWhere("card");
     setLink(null);
     try {
       const result = await notifyViaTelegramAction(panel.requestId, ids);
@@ -104,9 +134,10 @@ export default function BidPanel({ panel, today, telegram }: { panel: BidPanelDa
   }
   const eligible = panel.inviteOptions.filter((o) => !o.disabled).map((o) => o.id);
 
-  async function run(action: () => Promise<AnyResult>, done: string) {
+  async function run(action: () => Promise<AnyResult>, done: string, at: Where = "top") {
     if (busy) return;
     setBusy(true);
+    setWhere(at);
     setMessage("");
     setErrors({});
     setLink(null);
@@ -128,85 +159,252 @@ export default function BidPanel({ panel, today, telegram }: { panel: BidPanelDa
     setBusy(false);
   }
 
-  const err = (key: string) => (errors[key] ? <p className="mt-1 text-sm font-medium text-red-700">{errors[key]}</p> : null);
+  const err = (key: string) => (where === "card" && errors[key] ? <p className="error">{errors[key]}</p> : null);
   const id = panel.requestId;
   const { state } = panel;
+  const total = panel.groups.reduce((n, g) => n + g.bids.length, 0);
+  // A unit whose last bid was withdrawn since the chip was pressed falls back to all units.
+  const filter = panel.groups.some((g) => g.unit === unitFilter) ? unitFilter : "all";
+  const shownGroups = panel.groups.filter((g) => filter === "all" || g.unit === filter);
+  const canInvite = (contractorId: string) => panel.inviteOptions.some((o) => o.id === contractorId && !o.disabled);
+
+  const linkBox = link && (
+    <div role="status" className="notice notice-warn" style={{ display: "block" }}>
+      <b>Copy this link now. It is shown only once.</b>
+      <input readOnly value={link.url} onFocus={(e) => e.currentTarget.select()} className="input mono" style={{ marginTop: 8 }} aria-label="Bid invitation link" />
+      <p className="small" style={{ margin: "8px 0 0" }}>
+        It works for one bid by one contractor on this request only, and stops working on {formatDate(link.expiresAt)}.
+        Nothing has been sent to the contractor.
+      </p>
+    </div>
+  );
 
   return (
-    <section aria-labelledby="bid-heading" className="mt-8 rounded-md border border-zinc-300 p-4">
-      <h2 id="bid-heading" className="text-lg font-semibold">
+    <section aria-labelledby="bid-heading" className="stack" style={{ ["--gap" as string]: "20px" }}>
+      <h2 id="bid-heading" className="sr-only">
         Contractor bids
       </h2>
-      <p className="mt-1 text-sm">
-        <span className="font-medium">{panel.stateText}.</span>
-        {panel.closesAt && <> Closes {formatDate(panel.closesAt)} (end of day, India time).</>}
-      </p>
-      <p className="mt-1 text-sm text-zinc-700">
-        A bid is a contractor&apos;s price only. It does <strong>not</strong> confirm that they can start on the requested
-        date, and phone numbers stay hidden until you use the existing contact steps on a contractor&apos;s card.
+
+      <p className="notice notice-info" style={{ margin: 0 }}>
+        <span style={{ marginTop: 2 }}>
+          <Icon name="scale" size={18} />
+        </span>
+        <span>
+          <b>Prices are compared only within the same unit.</b> ₹/sq ft, ₹/day and fixed prices are never ranked against
+          each other, and no total cost is estimated.
+        </span>
       </p>
 
-      <div className="mt-3 space-y-3 text-sm">
+      {message && where === "top" && (
+        <Notice tone="muted" icon="info" role="status">
+          <b>{message}</b>
+        </Notice>
+      )}
+
+      {panel.selectedContractorId && (
+        <Notice tone="ok" icon="check">
+          <b>
+            Selected: {panel.selectedBidId ? "the contractor behind the bid marked “Selected” below." : "a contractor was recorded without one of these bids."}
+          </b>
+        </Notice>
+      )}
+
+      {panel.groups.length > 0 && (
+        <div className="row wrap unit-filter" role="group" aria-label="Show bids priced">
+          <button type="button" className={`chip ${filter === "all" ? "on" : ""}`} aria-pressed={filter === "all"} onClick={() => setUnitFilter("all")}>
+            All units · {total}
+          </button>
+          {panel.groups.map((g) => (
+            <button
+              key={g.unit}
+              type="button"
+              className={`chip ${filter === g.unit ? "on" : ""}`}
+              aria-pressed={filter === g.unit}
+              onClick={() => setUnitFilter(g.unit)}
+            >
+              {UNIT_CHIP[g.unit] ?? g.label} · {g.bids.length}
+            </button>
+          ))}
+        </div>
+      )}
+
+      {panel.groups.length === 0 && state !== "not_opened" && (
+        <div className="card empty stack" style={{ ["--gap" as string]: "8px" }}>
+          <span className="ic-box">
+            <Icon name="file" />
+          </span>
+          <p className="h3">No bids yet.</p>
+          <p className="small muted" style={{ margin: 0 }}>
+            Bids appear here as contractors send them, grouped by the unit they priced in.
+          </p>
+        </div>
+      )}
+
+      {shownGroups.map((g) => (
+        <PriceGroup key={g.unit} group={g} panel={panel} busy={busy} run={run} errors={errors} confirmHref={confirmHref} />
+      ))}
+
+      {panel.groups.length > 1 && (
+        <p className="small muted" style={{ margin: 0 }}>
+          These groups use different rate units, so their prices are <strong>not</strong> comparable with each other and no
+          total cost is estimated.
+        </p>
+      )}
+
+      {panel.invited.map((i) => (
+        <div key={i.contractorId} className="card flat tint row between wrap">
+          <div className="row">
+            <Avatar name={i.contractorName} />
+            <div>
+              <div className="h3">
+                {i.contractorName} <span className="mono muted">{i.contractorId}</span>
+              </div>
+              <div className="small muted">Invited, no bid yet · link {i.stateText.toLowerCase()}</div>
+            </div>
+          </div>
+          {state === "open" && canInvite(i.contractorId) && (
+            <button
+              type="button"
+              className="btn btn-ghost"
+              disabled={busy}
+              onClick={() => run(() => createBidInviteAction(id, i.contractorId), "Bid link created. Copy it now.", "invited")}
+            >
+              <Icon name="copy" size={16} /> New bid link
+            </button>
+          )}
+        </div>
+      ))}
+
+      {where === "invited" && message && !link && (
+        <Notice tone="muted" icon="info" role="status">
+          <b>{message}</b>
+        </Notice>
+      )}
+      {where === "invited" && linkBox}
+
+      {(panel.withdrawn.length > 0 || panel.roundHistory.length > 0) && (
+        <div className="stack" style={{ ["--gap" as string]: "8px" }}>
+          {panel.withdrawn.length > 0 && (
+            <details className="small">
+              <summary className="btn btn-quiet" style={{ display: "inline-flex" }}>Withdrawn bids ({panel.withdrawn.length})</summary>
+              <ol className="history" style={{ marginTop: 8 }}>
+                {panel.withdrawn.map((b) => (
+                  <li key={b.bidId}>
+                    <span>
+                      {b.contractorName} <span className="mono muted">{b.contractorId}</span>: {b.price}
+                    </span>
+                    <span className="tiny muted">Withdrawn: {b.history[b.history.length - 1]?.reason}</span>
+                  </li>
+                ))}
+              </ol>
+            </details>
+          )}
+          {panel.roundHistory.length > 0 && (
+            <details className="small">
+              <summary className="btn btn-quiet" style={{ display: "inline-flex" }}>Bidding history ({panel.roundHistory.length} entries)</summary>
+              <ol className="history" style={{ marginTop: 8 }}>
+                {panel.roundHistory.map((h, i) => (
+                  <li key={i}>
+                    <span>{h.event}</span>
+                    <span className="tiny muted">
+                      {formatDate(h.recordedAt)}
+                      {h.reason ? ` · reason: ${h.reason}` : ""}
+                    </span>
+                  </li>
+                ))}
+              </ol>
+            </details>
+          )}
+        </div>
+      )}
+
+      {/* Managing the round: opening, links, Telegram, closing. */}
+      <div className="card stack" style={{ ["--gap" as string]: "16px" }}>
+        <div className="row between wrap">
+          <span className="eyebrow">Bidding</span>
+          <span className={`pill ${state === "open" ? "pill-ok" : state === "selected" ? "pill-dark" : "pill-muted"}`}>{panel.stateText}</span>
+        </div>
+        <p className="small" style={{ margin: 0 }}>
+          <b>{panel.stateText}.</b>
+          {panel.closesAt && <> Closes {formatDate(panel.closesAt)} (end of day, India time).</>}
+        </p>
+        <p className="small muted" style={{ margin: 0 }}>
+          A bid is a contractor&apos;s price only. It does <strong>not</strong> confirm that they can start on the requested
+          date, and phone numbers stay hidden until you use the existing contact steps on a contractor&apos;s card.
+        </p>
+
         {state === "not_opened" && (
-          <div className="space-y-2 rounded-md bg-zinc-50 p-3">
-            <label htmlFor="deadline" className="block font-medium">
-              Closing date <span className="font-normal text-zinc-600">(optional)</span>
-            </label>
-            <input id="deadline" type="date" min={today} value={deadline} onChange={(e) => setDeadline(e.target.value)} className={field} />
-            {err("deadline")}
-            <button type="button" disabled={busy} className={button} onClick={() => run(() => openBiddingAction(id, deadline), "Bidding is open.")}>
-              Open bidding
-            </button>
+          <div className="stack" style={{ ["--gap" as string]: "10px" }}>
+            <div className="field">
+              <label htmlFor="deadline" className="label">
+                Closing date <span className="opt">(optional)</span>
+              </label>
+              <input id="deadline" type="date" min={today} value={deadline} onChange={(e) => setDeadline(e.target.value)} className="input" />
+              {err("deadline")}
+            </div>
+            <div>
+              <button type="button" disabled={busy} className="btn btn-primary" onClick={() => run(() => openBiddingAction(id, deadline), "Bidding is open.", "card")}>
+                Open bidding
+              </button>
+            </div>
           </div>
         )}
 
         {state === "open" && (
-          <div className="space-y-2 rounded-md bg-zinc-50 p-3">
-            <label htmlFor="inviteFor" className="block font-medium">
-              Create a private bid link for a potential match
-            </label>
-            <select id="inviteFor" value={inviteFor} onChange={(e) => setInviteFor(e.target.value)} className={field}>
-              <option value="">Choose…</option>
-              {panel.inviteOptions.map((o) => (
-                <option key={o.id} value={o.id} disabled={o.disabled}>
-                  {o.label}
-                  {o.why ? ` — ${o.why}` : ""}
-                </option>
-              ))}
-            </select>
-            <button type="button" disabled={busy || !inviteFor} className={button} onClick={() => run(() => createBidInviteAction(id, inviteFor), "Bid link created. Copy it now.")}>
-              Create bid link
-            </button>
-            <p className="text-zinc-600">
-              The app does <strong>not</strong> send the link: you pass it on yourself. Making a new link for the same
-              contractor replaces the old one.
+          <div className="stack" style={{ ["--gap" as string]: "10px" }}>
+            <div className="field">
+              <label htmlFor="inviteFor" className="label">
+                Create a private bid link for a potential match
+              </label>
+              <select id="inviteFor" value={inviteFor} onChange={(e) => setInviteFor(e.target.value)} className="select">
+                <option value="">Choose…</option>
+                {panel.inviteOptions.map((o) => (
+                  <option key={o.id} value={o.id} disabled={o.disabled}>
+                    {o.label}
+                    {o.why ? ` — ${o.why}` : ""}
+                  </option>
+                ))}
+              </select>
+              <p className="help">
+                The app does <strong>not</strong> send the link: you pass it on yourself. Making a new link for the same
+                contractor replaces the old one.
+              </p>
+            </div>
+            <div>
+              <button type="button" disabled={busy || !inviteFor} className="btn btn-primary" onClick={() => run(() => createBidInviteAction(id, inviteFor), "Bid link created. Copy it now.", "card")}>
+                <Icon name="copy" size={16} /> Create bid link
+              </button>
+            </div>
+          </div>
+        )}
+
+        {where === "card" && linkBox}
+
+        {state === "open" && (
+          <div className="card flat tint stack" style={{ ["--gap" as string]: "10px", padding: 16 }}>
+            <p className="h3 row" style={{ gap: 8 }}>
+              <Icon name="send" size={16} /> Notify by Telegram
             </p>
-          </div>
-        )}
-
-        {state === "open" && (
-          <div className="space-y-2 rounded-md border border-sky-200 bg-sky-50 p-3">
-            <p className="font-medium">Notify by Telegram</p>
             {!telegram.testMode ? (
-              <p className="text-zinc-700">This server uses REAL data, so Telegram notifications are switched off.</p>
+              <p className="small muted" style={{ margin: 0 }}>This server uses REAL data, so Telegram notifications are switched off.</p>
             ) : (
               <>
-                <p className="text-zinc-700">
+                <p className="small muted" style={{ margin: 0 }}>
                   Each contractor who <strong>connected their own Telegram</strong> gets the job on Telegram with Yes / No
                   buttons and sends one quote there. Contractors who have not connected get nothing and are shown as
                   &ldquo;Not connected&rdquo;.
                   {!telegram.configured && (
                     <>
                       {" "}Telegram is not fully set up yet, so you may see <strong>previews</strong> marked &ldquo;not sent&rdquo;.{" "}
-                      <Link href="/admin/telegram" className="text-blue-800 underline">Set up Telegram</Link>
+                      <Link href="/admin/telegram" style={{ color: "var(--ink)", textDecoration: "underline" }}>Set up Telegram</Link>
                     </>
                   )}
                 </p>
-                <div className="flex flex-wrap gap-2">
-                  <button type="button" disabled={busy || !inviteFor} className={quietButton} onClick={() => notify([inviteFor])}>
+                <div className="row wrap" style={{ gap: 8 }}>
+                  <button type="button" disabled={busy || !inviteFor} className="btn btn-ghost" onClick={() => notify([inviteFor])}>
                     Notify the contractor chosen above
                   </button>
-                  <button type="button" disabled={busy || eligible.length === 0} className={button} onClick={() => notify(eligible)}>
+                  <button type="button" disabled={busy || eligible.length === 0} className="btn btn-primary" onClick={() => notify(eligible)}>
                     {busy ? "Working…" : `Notify all eligible matches (${eligible.length})`}
                   </button>
                 </div>
@@ -216,31 +414,31 @@ export default function BidPanel({ panel, today, telegram }: { panel: BidPanelDa
         )}
 
         {notified && (
-          <div role="status" className="space-y-2 rounded-md border border-zinc-300 p-3">
-            <p className="font-medium">Notification results</p>
-            <ul className="space-y-2">
+          <div role="status" className="stack" style={{ ["--gap" as string]: "8px" }}>
+            <span className="eyebrow">Notification results</span>
+            <ul className="stack" style={{ ["--gap" as string]: "8px", listStyle: "none", padding: 0, margin: 0 }}>
               {notified.map((n) => (
-                <li key={n.contractorId} className="rounded-md bg-zinc-50 p-2">
-                  <p>
-                    <span className="font-medium">{n.name || n.contractorId}</span>{" "}
-                    {n.status === "sent" && <span className="font-semibold text-green-800">Sent to their own Telegram chat.</span>}
-                    {n.status === "not_connected" && <span className="text-zinc-700">Not connected to Telegram: nothing created or sent.</span>}
-                    {n.status === "preview" && <span className="font-semibold text-amber-800">Preview only: NOT sent (Telegram is not set up).</span>}
+                <li key={n.contractorId} className="card flat" style={{ padding: 12 }}>
+                  <p className="small" style={{ margin: 0 }}>
+                    <b>{n.name || n.contractorId}</b>{" "}
+                    {n.status === "sent" && <span className="pill pill-ok">Sent to their own Telegram chat.</span>}
+                    {n.status === "not_connected" && <span className="muted">Not connected to Telegram: nothing created or sent.</span>}
+                    {n.status === "preview" && <span className="pill pill-warn">Preview only: NOT sent (Telegram is not set up).</span>}
                     {n.status === "failed" && (
-                      <span className="font-semibold text-red-800">Not sent: {n.error ? SEND_ERROR_TEXT[n.error] : "unknown error."}</span>
+                      <span className="error" style={{ display: "inline" }}>Not sent: {n.error ? SEND_ERROR_TEXT[n.error] : "unknown error."}</span>
                     )}
-                    {n.status === "skipped" && <span className="text-zinc-700">Skipped: {NOTIFY_REASON[n.reason ?? ""] ?? n.reason}.</span>}
+                    {n.status === "skipped" && <span className="muted">Skipped: {NOTIFY_REASON[n.reason ?? ""] ?? n.reason}.</span>}
                   </p>
                   {n.link && (
                     <>
-                      <input readOnly value={n.link} onFocus={(e) => e.currentTarget.select()} className={`${field} font-mono`} aria-label={`Bid link for ${n.name}`} />
-                      <p className="text-xs text-zinc-600">Shown once. Works for one bid by this contractor on this request, until {formatDate(n.expiresAt ?? "")}.</p>
+                      <input readOnly value={n.link} onFocus={(e) => e.currentTarget.select()} className="input mono" style={{ marginTop: 8 }} aria-label={`Bid link for ${n.name}`} />
+                      <p className="help">Shown once. Works for one bid by this contractor on this request, until {formatDate(n.expiresAt ?? "")}.</p>
                     </>
                   )}
                   {n.preview && (
-                    <details className="mt-1">
-                      <summary className="cursor-pointer text-blue-800">Message {n.status === "preview" ? "preview" : "that was not sent"}</summary>
-                      <pre className="mt-1 whitespace-pre-wrap rounded bg-white p-2 text-xs text-zinc-800">{n.preview}</pre>
+                    <details style={{ marginTop: 6 }}>
+                      <summary className="small" style={{ cursor: "pointer", fontWeight: 600 }}>Message {n.status === "preview" ? "preview" : "that was not sent"}</summary>
+                      <pre className="quote tiny whitespace-pre-wrap" style={{ marginTop: 6 }}>{n.preview}</pre>
                     </details>
                   )}
                 </li>
@@ -249,38 +447,28 @@ export default function BidPanel({ panel, today, telegram }: { panel: BidPanelDa
           </div>
         )}
 
-        {link && (
-          <div role="status" className="rounded-md border border-amber-300 bg-amber-50 p-3">
-            <p className="font-medium">Copy this link now. It is shown only once.</p>
-            <input readOnly value={link.url} onFocus={(e) => e.currentTarget.select()} className={`${field} font-mono`} aria-label="Bid invitation link" />
-            <p className="mt-1 text-zinc-700">
-              It works for one bid by one contractor on this request only, and stops working on {formatDate(link.expiresAt)}.
-              Nothing has been sent to the contractor.
-            </p>
-          </div>
-        )}
-
         {(state === "open" || state === "closed") && (
-          <div className="space-y-2 rounded-md bg-zinc-50 p-3">
-            <label htmlFor="bidReason" className="block font-medium">
-              Reason <span className="font-normal text-zinc-600">(needed to cancel or reopen, max {REASON_MAX} characters)</span>
-            </label>
-            <input id="bidReason" type="text" maxLength={REASON_MAX} value={reason} onChange={(e) => setReason(e.target.value)} className={field} />
-            {err("reason")}
-            <div className="flex flex-wrap gap-2">
+          <div className="stack" style={{ ["--gap" as string]: "10px" }}>
+            <hr className="divider" style={{ margin: 0 }} />
+            <div className="field">
+              <label htmlFor="bidReason" className="label">
+                Reason <span className="opt">(needed to cancel or reopen, max {REASON_MAX} characters)</span>
+              </label>
+              <input id="bidReason" type="text" maxLength={REASON_MAX} value={reason} onChange={(e) => setReason(e.target.value)} className="input" />
+              {err("reason")}
+            </div>
+            <div className="row wrap" style={{ gap: 8 }}>
               {state === "open" && (
-                <button type="button" disabled={busy} className={quietButton} onClick={() => run(() => closeBiddingAction(id), "Bidding is closed.")}>
+                <button type="button" disabled={busy} className="btn btn-ghost" onClick={() => run(() => closeBiddingAction(id), "Bidding is closed.", "card")}>
                   Close bidding
                 </button>
               )}
               {state === "closed" && (
-                <>
-                  <button type="button" disabled={busy} className={quietButton} onClick={() => run(() => reopenBiddingAction(id, reason, ""), "Bidding is open again (recorded with your reason).")}>
-                    Reopen bidding
-                  </button>
-                </>
+                <button type="button" disabled={busy} className="btn btn-ghost" onClick={() => run(() => reopenBiddingAction(id, reason, ""), "Bidding is open again (recorded with your reason).", "card")}>
+                  Reopen bidding
+                </button>
               )}
-              <button type="button" disabled={busy} className={quietButton} onClick={() => run(() => cancelBiddingAction(id, reason), "Bidding is cancelled.")}>
+              <button type="button" disabled={busy} className="btn btn-quiet" onClick={() => run(() => cancelBiddingAction(id, reason), "Bidding is cancelled.", "card")}>
                 Cancel bidding
               </button>
             </div>
@@ -288,237 +476,272 @@ export default function BidPanel({ panel, today, telegram }: { panel: BidPanelDa
         )}
 
         {state === "cancelled" && (
-          <div className="space-y-2 rounded-md bg-zinc-50 p-3">
-            <label htmlFor="bidReason2" className="block font-medium">
-              Reason for reopening <span className="font-normal text-zinc-600">(required)</span>
-            </label>
-            <input id="bidReason2" type="text" maxLength={REASON_MAX} value={reason} onChange={(e) => setReason(e.target.value)} className={field} />
-            {err("reason")}
-            <button type="button" disabled={busy} className={quietButton} onClick={() => run(() => reopenBiddingAction(id, reason, ""), "Bidding is open again (recorded with your reason).")}>
-              Reopen bidding
-            </button>
+          <div className="stack" style={{ ["--gap" as string]: "10px" }}>
+            <div className="field">
+              <label htmlFor="bidReason2" className="label">
+                Reason for reopening <span className="opt">(required)</span>
+              </label>
+              <input id="bidReason2" type="text" maxLength={REASON_MAX} value={reason} onChange={(e) => setReason(e.target.value)} className="input" />
+              {err("reason")}
+            </div>
+            <div>
+              <button type="button" disabled={busy} className="btn btn-ghost" onClick={() => run(() => reopenBiddingAction(id, reason, ""), "Bidding is open again (recorded with your reason).", "card")}>
+                Reopen bidding
+              </button>
+            </div>
           </div>
         )}
-
-        {panel.selectedContractorId && (
-          <p className="rounded-md border border-green-300 bg-green-50 p-3 font-medium text-green-900">
-            Selected: {panel.selectedBidId ? "the contractor behind the bid marked “Selected” below." : "a contractor was recorded without one of these bids."}
-          </p>
+        {where === "card" && message && !link && (
+          <Notice tone="muted" icon="info" role="status">
+            <b>{message}</b>
+          </Notice>
         )}
       </div>
-
-      {panel.groups.length === 0 && state !== "not_opened" && (
-        <p className="mt-4 text-sm text-zinc-700">No bids yet.</p>
-      )}
-
-      {panel.groups.map((g) => (
-        <div key={g.unit} className="mt-5">
-          <h3 className="text-base font-semibold">Priced {g.label}</h3>
-          <p className="text-sm text-zinc-600">
-            {g.fixedScope
-              ? "Fixed prices are only comparable if each covers the same scope: read each contractor's notes."
-              : "Only bids in this same unit are compared with each other here."}{" "}
-            Cheapest first is not the same as best: look at start date and ratings too.
-          </p>
-          <ul className="mt-2 space-y-3">
-            {g.bids.map((b) => (
-              <BidCard key={b.bidId} bid={b} panel={panel} busy={busy} run={run} errors={errors} />
-            ))}
-          </ul>
-        </div>
-      ))}
-      {panel.groups.length > 1 && (
-        <p className="mt-3 text-sm text-zinc-700">
-          These groups use different rate units, so their prices are <strong>not</strong> comparable with each other and no
-          total cost is estimated.
-        </p>
-      )}
-
-      {panel.invited.length > 0 && (
-        <div className="mt-5 text-sm">
-          <h3 className="text-base font-semibold">Invited, no bid yet</h3>
-          <ul className="mt-1 list-disc pl-5 text-zinc-800">
-            {panel.invited.map((i) => (
-              <li key={i.contractorId}>
-                {i.contractorName} ({i.contractorId}): link {i.stateText.toLowerCase()}
-              </li>
-            ))}
-          </ul>
-        </div>
-      )}
-
-      {panel.withdrawn.length > 0 && (
-        <details className="mt-5 text-sm">
-          <summary className="cursor-pointer text-blue-800">Withdrawn bids ({panel.withdrawn.length})</summary>
-          <ul className="mt-2 list-disc pl-5 text-zinc-700">
-            {panel.withdrawn.map((b) => (
-              <li key={b.bidId}>
-                {b.contractorName} ({b.contractorId}): {b.price}. Withdrawn: {b.history[b.history.length - 1]?.reason}
-              </li>
-            ))}
-          </ul>
-        </details>
-      )}
-
-      {panel.roundHistory.length > 0 && (
-        <details className="mt-3 text-sm">
-          <summary className="cursor-pointer text-blue-800">Bidding history ({panel.roundHistory.length} entries)</summary>
-          <ol className="mt-2 list-decimal space-y-1 pl-5 text-zinc-700">
-            {panel.roundHistory.map((h, i) => (
-              <li key={i}>
-                {h.event} — {formatDate(h.recordedAt)}
-                {h.reason ? ` — reason: ${h.reason}` : ""}
-              </li>
-            ))}
-          </ol>
-        </details>
-      )}
-
-      {message && (
-        <p role="status" className="mt-3 text-sm font-medium text-zinc-900">
-          {message}
-        </p>
-      )}
     </section>
   );
 }
 
-function BidCard({
+// One unit group as the editorial comparison table: only bids in this same unit
+// are ever compared with each other.
+function PriceGroup({
+  group,
+  panel,
+  busy,
+  run,
+  errors,
+  confirmHref,
+}: {
+  group: PriceGroupView;
+  panel: BidPanelData;
+  busy: boolean;
+  run: Run;
+  errors: Record<string, string>;
+  confirmHref: string;
+}) {
+  const heading = group.fixedScope ? "Fixed price for the defined scope" : `Priced ${group.label}`;
+  return (
+    <section className="stack" style={{ ["--gap" as string]: "10px" }} aria-label={heading}>
+      <div className="group-head">
+        <h3 className="h2">{heading}</h3>
+        <span className="small muted">
+          {group.fixedScope
+            ? "Comparable only if each covers the same scope: read each contractor's notes."
+            : "Cheapest first is not the same as best: look at start date and reviews too."}
+        </span>
+      </div>
+      <div className="cmp-table">
+        <div className="cmp-head" aria-hidden="true">
+          <span>Contractor</span>
+          <span>Price</span>
+          <span>Start date</span>
+          <span>Reviews</span>
+          <span></span>
+        </div>
+        {group.bids.map((b) => (
+          <BidRow key={b.bidId} bid={b} panel={panel} busy={busy} run={run} errors={errors} confirmHref={confirmHref} />
+        ))}
+      </div>
+    </section>
+  );
+}
+
+function StandingPill({ bid }: { bid: BidView }) {
+  if (bid.chosen)
+    return (
+      <span className="pill pill-dark plain">
+        <Icon name="check" size={14} /> Selected
+      </span>
+    );
+  if (bid.standing === "eligible") return <span className="pill pill-ok">Can be selected</span>;
+  if (bid.standing === "provisional") return <span className="pill pill-warn">Provisional · date not confirmed</span>;
+  return <span className="pill pill-muted">{bid.standingText}</span>;
+}
+
+// "4.6 out of 5 from 5 reviews (too few to judge)" shown the reference's way.
+function RatingLine({ text, count }: { text: string; count: number }) {
+  const m = /^(\d(?:\.\d)?) out of 5 from (.+?)( \(too few to judge\))?$/.exec(text);
+  if (count === 0 || !m) return <span className="muted">{text}</span>;
+  return (
+    <span className="rating" aria-label={text}>
+      <span className="star-i">
+        <Icon name="star" size={15} />
+      </span>
+      <strong>{m[1]}</strong> <span className="muted">from {m[2]}</span>
+      {m[3] && <span className="muted"> · too few to judge</span>}
+    </span>
+  );
+}
+
+function BidRow({
   bid,
   panel,
   busy,
   run,
   errors,
+  confirmHref,
 }: {
   bid: BidView;
   panel: BidPanelData;
   busy: boolean;
-  run: (action: () => Promise<AnyResult>, done: string) => Promise<void>;
+  run: Run;
   errors: Record<string, string>;
+  confirmHref: string;
 }) {
   const [amount, setAmount] = useState(bid.amount);
   const [unit, setUnit] = useState(bid.unit);
   const [notes, setNotes] = useState(bid.notes);
   const [why, setWhy] = useState("");
-  const tone =
-    bid.standing === "eligible" ? "text-green-800" : bid.standing === "provisional" ? "text-amber-800" : "text-red-800";
+  const [amountText, unitText] = splitPrice(bid.price, bid.unit);
+  const first = firstName(bid.contractorName);
 
   return (
-    <li className={`rounded-md border p-3 text-sm ${bid.chosen ? "border-green-500 bg-green-50" : "border-zinc-300"}`}>
-      <p className="flex flex-wrap items-baseline justify-between gap-2">
-        <span className="font-semibold">
-          {bid.contractorName} <span className="font-mono text-xs font-normal">{bid.contractorId}</span>
-        </span>
-        {bid.chosen && <span className="rounded bg-green-700 px-2 py-0.5 text-xs font-semibold text-white">Selected</span>}
-      </p>
-      <p className="mt-1 text-lg font-semibold">{bid.price}</p>
-      {bid.corrected && <p className="text-xs text-zinc-600">Corrected by the administrator (see history).</p>}
-      {bid.notes && (
-        <p className="mt-1 whitespace-pre-wrap">
-          <span className="font-medium">Notes ({languageName(bid.notesLanguage)}, as written):</span> {bid.notes}
+    <div className={`cmp-row ${bid.chosen ? "is-selected" : ""}`}>
+      <div className="row" style={{ alignItems: "flex-start" }}>
+        <Avatar name={bid.contractorName} />
+        <div style={{ minWidth: 0 }}>
+          <div className="h3">{bid.contractorName}</div>
+          <div className="mono muted">{bid.contractorId}</div>
+        </div>
+      </div>
+
+      <div>
+        <div className="price">
+          {amountText}
+          {unitText && <span className="per">{unitText}</span>}
+        </div>
+        {bid.notes && (
+          <p className="tiny muted whitespace-pre-wrap" style={{ margin: "4px 0 0" }}>
+            {bid.notesLanguage && bid.notesLanguage !== "en" && <>Notes ({languageName(bid.notesLanguage)}, as written): </>}
+            {bid.notes}
+          </p>
+        )}
+        {bid.corrected && <p className="tiny muted" style={{ margin: "4px 0 0" }}>Corrected by the administrator (see history).</p>}
+      </div>
+
+      <div className="small">
+        <StandingPill bid={bid} />
+        <p className="small muted" style={{ margin: "6px 0 0" }}>
+          {bid.startText}
         </p>
-      )}
-      <dl className="mt-2 grid grid-cols-[auto_1fr] gap-x-3 gap-y-1">
-        <dt className="text-zinc-600">Requested start</dt>
-        <dd>{panel.requestedStart ? formatDate(panel.requestedStart) : "Not stated"}</dd>
-        <dt className="text-zinc-600">Their start date</dt>
-        <dd>{bid.startText}</dd>
-        <dt className="text-zinc-600">Reviews</dt>
-        <dd>
-          {bid.rating}
-          {bid.criteria.length > 0 && <span className="block text-zinc-700">{bid.criteria.join("; ")}</span>}
-          {bid.recentComments.length > 0 && (
-            <ul className="mt-2 space-y-2" aria-label={`Latest written feedback about ${bid.contractorName}`}>
-              {bid.recentComments.map((c, i) => (
-                <li key={i} className="rounded-md bg-zinc-50 p-2">
-                  <span className="block whitespace-pre-wrap">&ldquo;{c.comment}&rdquo;</span>
-                  <span className="block text-xs text-zinc-600">
-                    {c.overall}/5, {formatDate(c.submittedAt)}
-                    {c.commentLanguage ? `, ${languageName(c.commentLanguage)}, as written` : ""}
+      </div>
+
+      <div className="small">
+        <RatingLine text={bid.rating} count={bid.reviewCount} />
+        {bid.criteria.length > 0 && <p className="tiny muted" style={{ margin: "4px 0 0" }}>{bid.criteria.join(" · ")}</p>}
+        {bid.recentComments.length > 0 && (
+          <ul aria-label={`Latest written feedback about ${bid.contractorName}`} style={{ listStyle: "none", padding: 0, margin: 0 }}>
+            {bid.recentComments.map((c, i) => (
+              <li key={i}>
+                <p className="tiny quote-inline whitespace-pre-wrap" lang={c.commentLanguage || undefined}>
+                  &ldquo;{c.comment}&rdquo;
+                </p>
+                <span className="tiny muted" style={{ display: "block" }} lang="en">
+                  {c.overall}/5 · {formatDate(c.submittedAt)}
+                  {c.commentLanguage ? ` · ${languageName(c.commentLanguage)}, as written` : ""}
+                  {!c.commentEnglish && c.englishPending ? " · English version pending: no translation service is connected." : ""}
+                </span>
+                {c.commentEnglish && c.commentLanguage !== "en" && (
+                  <span className="tiny whitespace-pre-wrap" style={{ display: "block" }} lang="en">
+                    <b>English version:</b> {c.commentEnglish}
                   </span>
-                  {c.commentEnglish && c.commentLanguage !== "en" && (
-                    <span className="block whitespace-pre-wrap text-zinc-800">
-                      <span className="font-medium">English version:</span> {c.commentEnglish}
-                    </span>
-                  )}
-                  {!c.commentEnglish && c.englishPending && (
-                    <span className="block text-xs text-zinc-600">English version pending: no translation service is connected.</span>
-                  )}
-                </li>
-              ))}
-            </ul>
-          )}
-        </dd>
-        <dt className="text-zinc-600">Submitted</dt>
-        <dd>{formatDate(bid.submittedAt)}</dd>
-        <dt className="text-zinc-600">Status</dt>
-        <dd className={`font-medium ${tone}`}>{bid.standingText}</dd>
-      </dl>
+                )}
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
 
-      {panel.canSelect && (
-        <button
-          type="button"
-          disabled={busy || !bid.canSelect}
-          className={`${bid.canSelect ? button : quietButton} mt-3`}
-          onClick={() => run(() => selectBidderAction(panel.requestId, bid.bidId), "Saved. This bidder is recorded as the contractor for the job.")}
-        >
-          {bid.canSelect ? "Select this bidder" : "Cannot be selected yet"}
-        </button>
-      )}
-
-      {!panel.selectedContractorId && (
-        <details className="mt-3">
-          <summary className="cursor-pointer text-blue-800">Correct or withdraw this bid (administrator, with a reason)</summary>
-          <div className="mt-2 space-y-2">
-            <p className="text-zinc-600">A correction changes this one bid; it never creates a second bid. The earlier values stay in the history.</p>
-            <label className="block font-medium">
-              Amount (₹)
-              <input value={amount} onChange={(e) => setAmount(e.target.value)} inputMode="decimal" className={field} />
-            </label>
-            {errors.amount && <p className="text-sm font-medium text-red-700">{errors.amount}</p>}
-            <label className="block font-medium">
-              Rate unit
-              <select value={unit} onChange={(e) => setUnit(e.target.value as typeof unit)} className={field}>
-                {RATE_UNITS.map((u) => (
-                  <option key={u.value} value={u.value}>
-                    {u.label}
-                  </option>
-                ))}
-              </select>
-            </label>
-            <label className="block font-medium">
-              Notes <span className="font-normal text-zinc-600">(max {NOTES_MAX} characters)</span>
-              <textarea value={notes} onChange={(e) => setNotes(e.target.value)} maxLength={NOTES_MAX} rows={2} className={field} />
-            </label>
-            {errors.notes && <p className="text-sm font-medium text-red-700">{errors.notes}</p>}
-            <label className="block font-medium">
-              Reason (required)
-              <input value={why} onChange={(e) => setWhy(e.target.value)} maxLength={REASON_MAX} className={field} />
-            </label>
-            {errors.reason && <p className="text-sm font-medium text-red-700">{errors.reason}</p>}
-            <div className="flex flex-wrap gap-2">
-              <button type="button" disabled={busy} className={quietButton} onClick={() => run(() => correctBidAction(panel.requestId, bid.bidId, { amount, unit, notes }, why), "Saved. The correction is recorded; the earlier values stay in the history.")}>
-                Record correction
-              </button>
-              <button type="button" disabled={busy} className={quietButton} onClick={() => run(() => voidBidAction(panel.requestId, bid.bidId, why), "Saved. The bid is withdrawn; the contractor still cannot submit another.")}>
-                Withdraw this bid
-              </button>
-            </div>
-          </div>
-        </details>
-      )}
-
-      <details className="mt-2">
-        <summary className="cursor-pointer text-blue-800">History ({bid.history.length})</summary>
-        <ol className="mt-1 list-decimal space-y-1 pl-5 text-zinc-700">
-          {bid.history.map((h, i) => (
-            <li key={i}>
-              {h.event} — {h.price} — {formatDate(h.recordedAt)}
-              {h.reason ? ` — reason: ${h.reason}` : ""}
-            </li>
+      <div className="cmp-act">
+        {panel.canSelect &&
+          (bid.canSelect ? (
+            <button
+              type="button"
+              disabled={busy}
+              className="btn btn-primary"
+              onClick={() => run(() => selectBidderAction(panel.requestId, bid.bidId), "Saved. This bidder is recorded as the contractor for the job.")}
+            >
+              {first ? `Select ${first}` : "Select this bidder"}
+            </button>
+          ) : bid.standing === "provisional" ? (
+            <Link href={confirmHref} className="btn btn-ghost" title="Record their confirmed start date on their card first">
+              <Icon name="cal" size={16} /> Confirm start date first
+            </Link>
+          ) : (
+            <button type="button" disabled className="btn btn-ghost">
+              Cannot be selected
+            </button>
           ))}
-        </ol>
-      </details>
-    </li>
+      </div>
+
+      {/* Administrator tools for this one bid, kept out of the comparison. */}
+      <div className="row wrap" style={{ gridColumn: "1 / -1", gap: 8, alignItems: "flex-start", marginTop: -4 }}>
+        {!panel.selectedContractorId && (
+          <details className="small" style={{ flex: "1 1 280px" }}>
+            <summary className="btn btn-quiet" style={{ display: "inline-flex" }}>Correct or withdraw this bid</summary>
+            <div className="card flat tint stack" style={{ ["--gap" as string]: "10px", padding: 16, marginTop: 6 }}>
+              <p className="small muted" style={{ margin: 0 }}>
+                Administrator only, with a reason. A correction changes this one bid; it never creates a second bid. The
+                earlier values stay in the history.
+              </p>
+              <label className="field">
+                <span className="label">Amount (₹)</span>
+                <input value={amount} onChange={(e) => setAmount(e.target.value)} inputMode="decimal" className="input" aria-invalid={errors.amount ? true : undefined} />
+              </label>
+              {errors.amount && <p className="error">{errors.amount}</p>}
+              <label className="field">
+                <span className="label">Rate unit</span>
+                <select value={unit} onChange={(e) => setUnit(e.target.value as typeof unit)} className="select">
+                  {RATE_UNITS.map((u) => (
+                    <option key={u.value} value={u.value}>
+                      {u.label}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <label className="field">
+                <span className="label">
+                  Notes <span className="opt">(max {NOTES_MAX} characters)</span>
+                </span>
+                <textarea value={notes} onChange={(e) => setNotes(e.target.value)} maxLength={NOTES_MAX} rows={2} className="textarea" style={{ minHeight: 72 }} />
+              </label>
+              {errors.notes && <p className="error">{errors.notes}</p>}
+              <label className="field">
+                <span className="label">Reason (required)</span>
+                <input value={why} onChange={(e) => setWhy(e.target.value)} maxLength={REASON_MAX} className="input" aria-invalid={errors.reason ? true : undefined} />
+              </label>
+              {errors.reason && <p className="error">{errors.reason}</p>}
+              <div className="row wrap" style={{ gap: 8 }}>
+                <button type="button" disabled={busy} className="btn btn-ghost" onClick={() => run(() => correctBidAction(panel.requestId, bid.bidId, { amount, unit, notes }, why), "Saved. The correction is recorded; the earlier values stay in the history.")}>
+                  Record correction
+                </button>
+                <button type="button" disabled={busy} className="btn btn-quiet" onClick={() => run(() => voidBidAction(panel.requestId, bid.bidId, why), "Saved. The bid is withdrawn; the contractor still cannot submit another.")}>
+                  Withdraw this bid
+                </button>
+              </div>
+            </div>
+          </details>
+        )}
+        <details className="small" style={{ flex: "1 1 280px" }}>
+          <summary className="btn btn-quiet" style={{ display: "inline-flex" }}>History ({bid.history.length})</summary>
+          <ol className="history" style={{ marginTop: 6 }}>
+            <li>
+              <span>Submitted</span>
+              <span className="tiny muted">{formatDate(bid.submittedAt)}</span>
+            </li>
+            {bid.history.map((h, i) => (
+              <li key={i}>
+                <span>
+                  {h.event} · {h.price}
+                </span>
+                <span className="tiny muted">
+                  {formatDate(h.recordedAt)}
+                  {h.reason ? ` · reason: ${h.reason}` : ""}
+                </span>
+              </li>
+            ))}
+          </ol>
+        </details>
+      </div>
+    </div>
   );
 }

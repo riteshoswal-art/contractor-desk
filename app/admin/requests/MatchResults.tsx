@@ -38,27 +38,27 @@ export type CandidateExtras = {
 function ConfirmationStatus({ info }: { info: NonNullable<CandidateExtras["confirmation"]> }) {
   const { current, state, history } = info;
   return (
-    <div className="mt-2 rounded-md bg-zinc-50 p-3 text-sm">
-      <p className="font-medium">
+    <div className="quote" style={{ marginTop: 10 }}>
+      <p style={{ margin: 0, fontWeight: 600 }}>
         Confirmation for this request:{" "}
         {current ? CONFIRMATION_LABELS[current.status] : "none recorded"}
       </p>
       {current && (
-        <p className="mt-1 text-zinc-700">
+        <p className="muted" style={{ margin: "4px 0 0" }}>
           {SOURCE_LABELS[current.source]}, {fmt(current.recordedAt)}
           {current.confirmedStartDate ? `. Date: ${fmt(current.confirmedStartDate)}` : ""}
           {current.note ? `. Note: ${current.note}` : ""}
         </p>
       )}
       {!state.confirmed && (
-        <p className="mt-1 text-zinc-700">{NOT_CONFIRMED_TEXT[state.reason]}</p>
+        <p className="muted" style={{ margin: "4px 0 0" }}>{NOT_CONFIRMED_TEXT[state.reason]}</p>
       )}
       {history.length > 1 && (
-        <details className="mt-2">
-          <summary className="cursor-pointer text-blue-800">
+        <details style={{ marginTop: 8 }}>
+          <summary className="cursor-pointer" style={{ fontWeight: 600 }}>
             History ({history.length} entries)
           </summary>
-          <ol className="mt-1 list-decimal space-y-1 pl-5 text-zinc-700">
+          <ol className="history" style={{ marginTop: 8 }}>
             {history.map((h) => (
               <li key={h.id}>
                 {CONFIRMATION_LABELS[h.status]}
@@ -88,11 +88,11 @@ export default function MatchResults({
     .map((k) => `${result.excluded[k]} ${EXCLUSION_LABELS[k]}`);
 
   return (
-    <section aria-labelledby="matches-heading" className="mt-8">
-      <h2 id="matches-heading" className="text-lg font-semibold">
+    <section aria-labelledby="matches-heading" className="stack" style={{ ["--gap" as string]: "14px", marginTop: 32 }}>
+      <h2 id="matches-heading" className="h2">
         Potential contractors
       </h2>
-      <p className="mt-1 text-sm text-zinc-700">
+      <p className="small muted" style={{ marginTop: 6 }}>
         Found by simple rules on trade, locality, availability and start date.
         These are potential matches only: nobody has been contacted, and no
         availability is guaranteed. Job duration, job size and budget are not
@@ -100,7 +100,7 @@ export default function MatchResults({
       </p>
 
       {result.requestIncomplete && (
-        <p className="mt-4 rounded-md border border-zinc-300 p-4 text-sm">
+        <p className="notice notice-muted">
           This request is missing a trade or locality, so no search was run.
         </p>
       )}
@@ -108,10 +108,10 @@ export default function MatchResults({
       {!result.requestIncomplete && result.candidates.length === 0 && (
         <div
           role="status"
-          className="mt-4 rounded-md border border-zinc-300 bg-zinc-50 p-4 text-sm"
+          className="card tint flat small"
         >
-          <p className="font-medium">No suitable contractors found.</p>
-          <p className="mt-1 text-zinc-700">
+          <p className="h3">No suitable contractors found.</p>
+          <p className="muted" style={{ margin: "6px 0 0" }}>
             {result.checked === 0
               ? `There are no ${result.recordType} contractor records yet.`
               : `We checked ${result.checked} ${result.recordType} contractor record${result.checked === 1 ? "" : "s"}; none passed every rule.`}{" "}
@@ -123,7 +123,7 @@ export default function MatchResults({
 
       {result.candidates.length > 0 && (
         <>
-          <p className="mt-4 text-sm font-medium">
+          <p className="small" style={{ fontWeight: 600 }}>
             Showing {result.candidates.length} of {result.eligibleCount}{" "}
             potential match{result.eligibleCount === 1 ? "" : "es"}. Ordered by
             start-date fit first (exact date, then 1 day later, then 2 days
@@ -131,7 +131,7 @@ export default function MatchResults({
             report.
           </p>
           {result.needsStartConfirmationCount > 0 && (
-            <p className="mt-2 rounded-md border border-amber-300 bg-amber-50 p-3 text-sm text-amber-950">
+            <p className="notice notice-warn">
               {result.needsStartConfirmationCount} of these{" "}
               {result.needsStartConfirmationCount === 1 ? "is" : "are"}{" "}
               labelled &ldquo;{START_NEEDS_CONFIRMATION}&rdquo;: their stated
@@ -139,24 +139,24 @@ export default function MatchResults({
               Confirm it with them before relying on it.
             </p>
           )}
-          <ol className="mt-3 space-y-4">
+          <ol className="stack" style={{ ["--gap" as string]: "14px", listStyle: "none", padding: 0, margin: 0 }}>
             {result.candidates.map((c, i) => (
               <li
                 key={c.contractorId}
-                className="rounded-md border border-zinc-300 p-4"
+                className="card"
               >
-                <div className="flex flex-wrap items-center justify-between gap-2">
-                  <h3 className="text-base font-semibold">
+                <div className="row between wrap" style={{ gap: 8 }}>
+                  <h3 className="h3">
                     {i + 1}. {c.name || "Name not given"}{" "}
-                    <span className="font-mono text-sm font-normal text-zinc-600">
+                    <span className="mono muted" style={{ fontWeight: 400 }}>
                       {c.contractorId}
                     </span>
                   </h3>
                   <span
                     className={
                       c.recordType === "TEST"
-                        ? "rounded bg-amber-100 px-2 py-0.5 text-xs font-semibold text-amber-950"
-                        : "rounded bg-zinc-200 px-2 py-0.5 text-xs font-semibold text-zinc-900"
+                        ? "pill plain pill-warn"
+                        : "pill plain pill-dark"
                     }
                   >
                     {c.recordType}
@@ -166,8 +166,8 @@ export default function MatchResults({
                 {extras?.[c.contractorId]?.confirmation?.state.confirmed ? (
                   // Only a confirmation recorded for THIS request, by the
                   // contractor or by you, ever shows this.
-                  <p className="mt-2 text-sm font-medium">
-                    <span className="rounded bg-green-100 px-2 py-0.5 text-xs font-semibold text-green-900">
+                  <p className="small" style={{ margin: "10px 0 0", fontWeight: 600, display: "flex", flexWrap: "wrap", alignItems: "center", gap: 8 }}>
+                    <span className="pill pill-ok">
                       Start date confirmed:{" "}
                       {fmt(
                         (extras[c.contractorId].confirmation!.state as { startDate: string }).startDate,
@@ -178,14 +178,14 @@ export default function MatchResults({
                 ) : c.startFit.label ? (
                   // A near-date candidate is never shown as confirmed: even a
                   // recorded confirmation was not about the requested date.
-                  <p className="mt-2 text-sm font-medium">
-                    <span className="rounded bg-amber-100 px-2 py-0.5 text-xs font-semibold text-amber-950">
+                  <p className="small" style={{ margin: "10px 0 0", fontWeight: 600, display: "flex", flexWrap: "wrap", alignItems: "center", gap: 8 }}>
+                    <span className="pill pill-warn">
                       {c.startFit.label}
                     </span>{" "}
                     Potential match — not confirmed for the requested date
                   </p>
                 ) : (
-                  <p className="mt-2 text-sm font-medium">
+                  <p className="small" style={{ margin: "10px 0 0", fontWeight: 600, display: "flex", flexWrap: "wrap", alignItems: "center", gap: 8 }}>
                     {c.evidence.kind === "founder_confirmed"
                       ? `Potential match — availability recorded as confirmed by you on ${fmt(c.evidence.at)}`
                       : "Potential match — availability not confirmed"}
@@ -197,14 +197,14 @@ export default function MatchResults({
                 )}
 
                 {extras?.[c.contractorId]?.rating && (
-                  <p className="mt-2 text-sm">
-                    <span className="font-medium">Reviews:</span>{" "}
+                  <p className="small" style={{ margin: "10px 0 0" }}>
+                    <span style={{ fontWeight: 600 }}>Reviews:</span>{" "}
                     {ratingText(extras[c.contractorId].rating!.summary ?? undefined)}
                   </p>
                 )}
 
-                <h4 className="mt-3 text-sm font-semibold">Why this match</h4>
-                <ul className="mt-1 list-disc space-y-1 pl-5 text-sm">
+                <h4 className="eyebrow" style={{ margin: "14px 0 0" }}>Why this match</h4>
+                <ul className="small" style={{ margin: "6px 0 0", paddingLeft: 20, listStyle: "disc", lineHeight: 1.6 }}>
                   {c.reasons.map((r) => (
                     <li key={r}>{r}</li>
                   ))}
@@ -212,10 +212,10 @@ export default function MatchResults({
 
                 {c.missing.length > 0 && (
                   <>
-                    <h4 className="mt-3 text-sm font-semibold">
+                    <h4 className="eyebrow" style={{ margin: "14px 0 0" }}>
                       Missing or unchecked
                     </h4>
-                    <ul className="mt-1 list-disc space-y-1 pl-5 text-sm text-zinc-800">
+                    <ul className="small muted" style={{ margin: "6px 0 0", paddingLeft: 20, listStyle: "disc", lineHeight: 1.6 }}>
                       {c.missing.map((m) => (
                         <li key={m}>{m}</li>
                       ))}
@@ -225,18 +225,18 @@ export default function MatchResults({
 
                 {extras?.[c.contractorId]?.slot}
 
-                <p className="mt-3 text-sm text-zinc-600">
+                <p className="small muted" style={{ margin: "14px 0 0", paddingTop: 12, borderTop: "1px solid var(--line)" }}>
                   Phone number: held back until you review a message.{" "}
                   <Link
                     href={`/admin/requests/${request.id}/contact/${c.contractorId}`}
-                    className="font-medium text-blue-800 underline"
+                    className="font-semibold underline underline-offset-2" style={{ color: "var(--ink)" }}
                   >
                     Prepare a message
                   </Link>
                   {" · "}
                   <Link
                     href={`/admin/requests/${request.id}/outcome/${c.contractorId}`}
-                    className="font-medium text-blue-800 underline"
+                    className="font-semibold underline underline-offset-2" style={{ color: "var(--ink)" }}
                   >
                     Record outcome
                   </Link>
@@ -248,7 +248,7 @@ export default function MatchResults({
       )}
 
       {!result.requestIncomplete && (
-        <p className="mt-4 text-sm text-zinc-600">
+        <p className="small muted">
           Checked {result.checked} {result.recordType} contractor record
           {result.checked === 1 ? "" : "s"} for {request.trade} in{" "}
           {request.area}

@@ -5,17 +5,23 @@ import { NOTES_MAX, RATE_UNITS, validateBid, type BidErrors } from "@/lib/bid";
 import type { BidFormInfo } from "@/lib/bid-store";
 import { fill, getDict, translateMessage } from "@/lib/i18n";
 import LanguageSelector from "../../LanguageSelector";
+import { Icon, Logo } from "../../ui";
 import { useLanguage } from "../../useLanguage";
 import { submitBidAction } from "./actions";
 
 type Status = "idle" | "sending" | "done" | "used" | "closed" | "bad_link" | "failed";
 
-const fieldClass =
-  "mt-1 block w-full rounded-md border border-zinc-400 bg-white px-3 py-2.5 text-base text-zinc-900 placeholder:text-zinc-500 focus:border-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-700/40 aria-[invalid=true]:border-red-700";
-const labelClass = "block text-sm font-medium text-zinc-900";
-
 // "2026-10-21" -> "21-10-2026": digits only, so it reads the same in every language.
 const dayMonthYear = (iso: string) => iso.split("-").reverse().join("-");
+
+// "1250.5" -> "₹1,250.50" (Indian grouping); anything odd is shown as typed.
+function rupees(amount: string): string {
+  const n = Number(amount);
+  if (!amount.trim() || !Number.isFinite(n)) return amount;
+  return "₹" + new Intl.NumberFormat("en-IN", Number.isInteger(n) ? { maximumFractionDigits: 0 } : { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(n);
+}
+
+const Req = () => <span className="req">*</span>;
 
 // The bid screen a contractor reaches from a private link. It shows only the
 // job (trade, area, dates): no developer name or phone, no other contractor, no
@@ -69,39 +75,77 @@ export default function BidForm({ token, info }: { token: string; info: BidFormI
     }
   }
 
-  const header = (
-    <>
-      <p className="text-sm font-medium text-zinc-600">{d.common.brand}</p>
-      <h1 className="mt-1 text-2xl font-semibold tracking-tight sm:text-3xl">{t.title}</h1>
-      <p className="mt-3 text-base leading-7 text-zinc-700">{t.intro}</p>
-      <div className="mt-6 rounded-md border border-zinc-300 bg-zinc-50 p-4 text-sm leading-6">
-        <p className="font-semibold">{t.jobHeading}</p>
-        <p className="mt-1">{fill(t.jobLine, { trade, area })}</p>
-        {info.startDate && <p className="text-zinc-700">{fill(t.neededFrom, { date: dayMonthYear(info.startDate) })}</p>}
-        {info.durationDays && <p className="text-zinc-700">{fill(t.duration, { days: info.durationDays })}</p>}
-      </div>
-      {info.provisional && (
-        <p role="note" className="mt-4 rounded-md border border-amber-300 bg-amber-50 p-4 text-sm text-amber-950">
-          {t.provisionalNote}
-        </p>
+  const topRow = (
+    <div className="row between">
+      <span className="brand-sm">
+        <Logo />
+        <span className="sr-only">{d.common.brand}</span>
+      </span>
+      <LanguageSelector language={language} onChange={setLanguage} variant="compact" />
+    </div>
+  );
+
+  const job = (
+    <div className="card tint flat job-card">
+      <span className="eyebrow">{t.jobHeading}</span>
+      <p className="h2" style={{ marginTop: 6 }}>
+        {fill(t.jobLine, { trade, area })}
+      </p>
+      {(info.startDate || info.durationDays) && (
+        <div className="row wrap small muted" style={{ marginTop: 8, gap: "6px 14px" }}>
+          {info.startDate && (
+            <span className="row" style={{ gap: 6 }}>
+              <Icon name="cal" size={15} /> {fill(t.neededFrom, { date: dayMonthYear(info.startDate) })}
+            </span>
+          )}
+          {info.durationDays && (
+            <span className="row" style={{ gap: 6 }}>
+              <Icon name="clock" size={15} /> {fill(t.duration, { days: info.durationDays })}
+            </span>
+          )}
+        </div>
       )}
-      <LanguageSelector language={language} onChange={setLanguage} />
-    </>
+    </div>
+  );
+
+  const provisionalNote = (
+    <p role="note" className="notice notice-warn small" style={{ margin: 0 }}>
+      <Icon name="info" size={16} className="mt-0.5" />
+      <span>{t.provisionalNote}</span>
+    </p>
   );
 
   if (status === "done" || status === "used" || status === "closed" || status === "bad_link") {
     const message =
       status === "done" ? (provisional ? t.thanksProvisional : t.thanks) : status === "used" ? t.alreadyDone : status === "closed" ? t.closed : t.linkBad;
+    const good = status === "done" || status === "used";
     return (
       <div lang={language}>
-        {header}
-        <div
-          role="status"
-          className={`mt-8 rounded-md border p-4 text-sm font-medium ${
-            status === "bad_link" ? "border-red-300 bg-red-50 text-red-900" : "border-green-300 bg-green-50 text-green-900"
-          }`}
-        >
-          {message}
+        <div className="stack" style={{ ["--gap" as string]: "16px" }}>
+          {topRow}
+          {job}
+          <div className="center-done stack" style={{ ["--gap" as string]: "12px" }}>
+            <span className={good ? "done-ic" : "done-ic bg-[var(--surface-2)] text-[var(--ink)]"}>
+              <Icon name={good ? "check" : "info"} size={30} />
+            </span>
+            <h1 role="status" className="h2">
+              {message}
+            </h1>
+            {status === "done" && (
+              <div className="card flat receipt">
+                <div className="row between">
+                  <span className="muted small">{t.amountLabel}</span>
+                  <span className="h3">{rupees(amount)}</span>
+                </div>
+                {unit && (
+                  <div className="row between">
+                    <span className="muted small">{t.unitLabel}</span>
+                    <span className="h3 text-right">{t.units[unit as keyof typeof t.units] ?? unit}</span>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
         </div>
       </div>
     );
@@ -111,101 +155,124 @@ export default function BidForm({ token, info }: { token: string; info: BidFormI
 
   return (
     <div lang={language}>
-      {header}
-      <form onSubmit={submit} noValidate className="mt-8 space-y-6">
+      <form onSubmit={submit} noValidate className="stack" style={{ ["--gap" as string]: "18px" }}>
+        {topRow}
+        <div>
+          <h1 className="h1">{t.title}</h1>
+          <p className="muted small" style={{ margin: "6px 0 0" }}>
+            {t.intro}
+          </p>
+        </div>
+        {job}
+        {info.provisional && provisionalNote}
+
         {errorCount > 0 && (
-          <div role="alert" className="rounded-md border border-red-300 bg-red-50 p-4 text-sm text-red-900">
+          <div role="alert" className="notice small bg-red-50 text-red-900">
             {errorCount === 1 ? d.common.fixOne : fill(d.common.fixMany, { n: errorCount })}
           </div>
         )}
         {status === "failed" && (
-          <div role="alert" className="rounded-md border border-red-300 bg-red-50 p-4 text-sm font-medium text-red-900">
+          <div role="alert" className="notice small bg-red-50 font-semibold text-red-900">
             {t.failed}
           </div>
         )}
 
-        <div>
-          <label htmlFor="amount" className={labelClass}>
-            {t.amountLabel} <span className="text-red-700">*</span>
+        <div className="field">
+          <label htmlFor="amount" className="label">
+            {t.amountLabel} <Req />
           </label>
-          <input
-            id="amount"
-            type="text"
-            inputMode="decimal"
-            autoComplete="off"
-            value={amount}
-            onChange={(e) => setAmount(e.target.value)}
-            aria-invalid={errors.amount ? true : undefined}
-            aria-describedby={errors.amount ? "amount-error" : "amount-help"}
-            className={fieldClass}
-          />
-          <p id="amount-help" className="mt-1 text-sm text-zinc-600">
+          <div className="prefix-input">
+            <span aria-hidden="true">₹</span>
+            <input
+              id="amount"
+              type="text"
+              inputMode="decimal"
+              autoComplete="off"
+              placeholder="0"
+              className="input"
+              value={amount}
+              onChange={(e) => setAmount(e.target.value)}
+              aria-required="true"
+              aria-invalid={errors.amount ? true : undefined}
+              aria-describedby={errors.amount ? "amount-error amount-help" : "amount-help"}
+            />
+          </div>
+          <p id="amount-help" className="help">
             {t.amountHelp}
           </p>
           {errors.amount && (
-            <p id="amount-error" className="mt-1 text-sm font-medium text-red-700">
+            <p id="amount-error" className="error">
               {say("amount")}
             </p>
           )}
         </div>
 
-        <div>
-          <label htmlFor="unit" className={labelClass}>
-            {t.unitLabel} <span className="text-red-700">*</span>
-          </label>
-          <select
+        <div className="field">
+          <p id="unit-label" className="label">
+            {t.unitLabel} <Req />
+          </p>
+          <div
             id="unit"
-            value={unit}
-            onChange={(e) => setUnit(e.target.value)}
-            aria-invalid={errors.unit ? true : undefined}
+            role="group"
+            className="unit-grid"
+            aria-labelledby="unit-label"
+            data-invalid={errors.unit ? true : undefined}
             aria-describedby={errors.unit ? "unit-error" : undefined}
-            className={fieldClass}
           >
-            <option value="">{t.unitChoose}</option>
             {RATE_UNITS.map((u) => (
-              <option key={u.value} value={u.value}>
+              <button
+                key={u.value}
+                type="button"
+                value={u.value}
+                aria-pressed={unit === u.value}
+                onClick={() => {
+                  setUnit(u.value);
+                  setErrors((e) => ({ ...e, unit: undefined }));
+                }}
+                className={`chip unit-chip${unit === u.value ? " on" : ""}`}
+              >
                 {t.units[u.value]}
-              </option>
+              </button>
             ))}
-          </select>
+          </div>
           {errors.unit && (
-            <p id="unit-error" className="mt-1 text-sm font-medium text-red-700">
+            <p id="unit-error" className="error">
               {say("unit")}
             </p>
           )}
         </div>
 
-        <div>
-          <label htmlFor="notes" className={labelClass}>
-            {t.notesLabel} <span className="font-normal text-zinc-600">{d.common.optional}</span>
+        <div className="field">
+          <label htmlFor="notes" className="label">
+            {t.notesLabel} <span className="opt">{d.common.optional}</span>
           </label>
           <textarea
             id="notes"
-            rows={4}
+            rows={3}
             maxLength={NOTES_MAX}
+            className="textarea"
+            style={{ minHeight: 84 }}
             value={notes}
             onChange={(e) => setNotes(e.target.value)}
             aria-invalid={errors.notes ? true : undefined}
-            aria-describedby={errors.notes ? "notes-error" : "notes-help"}
-            className={fieldClass}
+            aria-describedby={errors.notes ? "notes-error notes-help" : "notes-help"}
           />
-          <p id="notes-help" className="mt-1 text-sm text-zinc-600">
+          <p id="notes-help" className="help">
             {t.notesHelp} {fill(d.review.charCount, { n: notes.length, max: NOTES_MAX })}
           </p>
           {errors.notes && (
-            <p id="notes-error" className="mt-1 text-sm font-medium text-red-700">
+            <p id="notes-error" className="error">
               {say("notes")}
             </p>
           )}
         </div>
 
-        <p className="rounded-md border border-zinc-300 bg-zinc-50 p-4 text-sm font-medium text-zinc-900">{t.onceNote}</p>
+        <p className="notice notice-info small" style={{ margin: 0 }}>
+          <Icon name="lock" size={16} className="mt-0.5" />
+          <span>{t.onceNote}</span>
+        </p>
 
-        <button
-          type="submit"
-          disabled={status === "sending"}
-          className="w-full rounded-md bg-blue-800 px-4 py-3 text-base font-semibold text-white hover:bg-blue-900 focus:outline-none focus:ring-2 focus:ring-blue-700 focus:ring-offset-2 disabled:opacity-60 sm:w-auto"
-        >
+        <button type="submit" disabled={status === "sending"} className="btn btn-primary btn-block btn-lg">
           {status === "sending" ? t.submitting : t.submit}
         </button>
       </form>

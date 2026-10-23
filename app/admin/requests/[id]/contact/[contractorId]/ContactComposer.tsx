@@ -93,14 +93,15 @@ export default function ContactComposer({
   }
 
   const buttonClass =
-    "rounded-md bg-blue-800 px-4 py-3 text-base font-semibold text-white hover:bg-blue-900 disabled:opacity-60";
+    "btn btn-primary btn-lg";
 
   return (
-    <div className="mt-6 space-y-5">
+    <div className="stack" style={{ ["--gap" as string]: "18px" }}>
       {error && (
         <div
           role="alert"
-          className="rounded-md border border-red-300 bg-red-50 p-3 text-sm font-medium text-red-900"
+          className="notice notice-warn"
+          style={{ fontWeight: 600 }}
         >
           {error}
         </div>
@@ -120,28 +121,28 @@ export default function ContactComposer({
       {draft && (
         <>
           {draft.recordType === "TEST" && (
-            <div className="rounded-md border border-amber-400 bg-amber-100 p-3 text-sm font-medium text-amber-950">
+            <div className="notice notice-warn" style={{ fontWeight: 600 }}>
               TEST record. The message is labelled as a test, and the link will
               open a chat with your own test number, never with this
               contractor.
             </div>
           )}
 
-          <p className="text-sm text-zinc-700">
+          <p className="small muted" style={{ margin: 0 }}>
             {draft.source === "ai"
               ? "Drafted by AI from the saved request details only (the contractor's name and phone were not sent to it). AI can make mistakes, so read every word."
               : `Standard wording${draft.aiProblem ? ` (${PROBLEM_TEXT[draft.aiProblem] ?? "the AI draft was not used"})` : ""}. It only states the saved request details and asks whether they are available.`}
           </p>
 
           {draft.destination === "blocked" && (
-            <p className="rounded-md border border-zinc-300 bg-zinc-50 p-3 text-sm">
+            <p className="notice notice-muted" style={{ margin: 0, display: "block" }}>
               {LINK_ERRORS[draft.blockedReason ?? "no_phone"]} You can still
               copy the message above.
             </p>
           )}
 
-          <div>
-            <label htmlFor="message" className="block text-sm font-medium">
+          <div className="field">
+            <label htmlFor="message" className="label">
               Message (you can edit it)
             </label>
             <textarea
@@ -154,11 +155,12 @@ export default function ContactComposer({
                 setUrl("");
                 setReviewed(false);
               }}
-              className="mt-1 block w-full rounded-md border border-zinc-400 bg-white px-3 py-2.5 text-base focus:border-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-700/40"
+              className="textarea"
+              style={{ minHeight: 200 }}
             />
           </div>
 
-          <label className="flex cursor-pointer items-start gap-3 rounded-md border border-zinc-300 p-3 text-sm leading-6">
+          <label className="check card flat" style={{ padding: 14 }}>
             <input
               type="checkbox"
               checked={reviewed}
@@ -166,7 +168,6 @@ export default function ContactComposer({
                 setReviewed(e.target.checked);
                 setUrl("");
               }}
-              className="mt-1 h-4 w-4 shrink-0 accent-blue-800"
             />
             <span>
               I have read this message and checked that it says nothing untrue
@@ -186,16 +187,16 @@ export default function ContactComposer({
           )}
 
           {url && (
-            <div className="rounded-md border border-green-300 bg-green-50 p-4 text-sm">
+            <div className="notice notice-ok" style={{ display: "block" }}>
               <a
                 href={url}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="font-semibold text-blue-800 underline"
+                className="btn btn-primary"
               >
                 Open WhatsApp with this message
               </a>
-              <p className="mt-2 text-zinc-800">
+              <p className="small" style={{ margin: "10px 0 0" }}>
                 Nothing has been sent. WhatsApp opens with the message ready:
                 check the recipient, then press send yourself.
               </p>
@@ -206,7 +207,7 @@ export default function ContactComposer({
             type="button"
             onClick={makeDraft}
             disabled={busy !== ""}
-            className="py-2 text-sm text-blue-800 underline"
+            className="btn btn-quiet"
           >
             Draft again
           </button>

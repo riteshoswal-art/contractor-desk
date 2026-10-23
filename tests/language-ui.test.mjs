@@ -43,7 +43,7 @@ test("registration in English is exactly the English wording and has no Hindi or
 test("registration in Hindi and Marathi: labels, instructions, trades, areas, availability and consent are translated", () => {
   for (const code of NON_ENGLISH) {
     const html = register(code); const shown = text(html); const d = getDict(code);
-    for (const s of [d.register.title, d.register.intro, d.register.noteBody, d.register.nameLabel, d.register.tradeLabel, d.register.areaLabel, d.register.availabilityLabel, d.register.phoneLabel, d.register.phoneHint, d.register.submit, d.consent.contractor, d.common.back, d.common.brand]) {
+    for (const s of [d.register.title, d.register.intro, d.register.noteBody, d.register.nameLabel, d.register.tradeLabel, d.register.areaLabel, d.register.availabilityLabel, d.register.phoneLabel, d.register.phoneHint, d.register.submit, d.consent.contractor, d.common.brand]) {
       assert.ok(shown.includes(s), `${code}: ${s.slice(0, 40)}`);
     }
     for (const t of TRADES) assert.ok(shown.includes(d.trades[t]), `${code} trade ${t}`);
@@ -57,7 +57,8 @@ test("registration in Hindi and Marathi: labels, instructions, trades, areas, av
 test("underneath the translated labels the values the server relies on are still the English ones", () => {
   for (const code of NON_ENGLISH) {
     const html = register(code);
-    for (const t of TRADES) assert.ok(html.includes(`<option value="${t}">${getDict(code).trades[t]}</option>`), `${code} trade ${t}`);
+    // Trades are tap buttons now: the button's value is the English trade name, its text the translation.
+    for (const t of TRADES) assert.ok(html.includes(`value="${t}" aria-pressed="false" class="chip min-h-10">${getDict(code).trades[t]}</button>`), `${code} trade ${t}`);
     for (const a of PUNE_AREAS) assert.ok(html.includes(`<option value="${a}">${getDict(code).areas[a]}</option>`), `${code} area ${a}`);
     assert.ok(html.includes('<option value="Other">'));
     for (const v of ["now", "from_date", "unavailable"]) assert.ok(html.includes(`value="${v}"`), `${code} availability ${v}`);
@@ -83,7 +84,7 @@ test("registration form keeps its fields: required marks, honeypot, phone input 
     assert.ok(html.includes('name="website"') && html.includes('aria-hidden="true"'), "honeypot");
     assert.ok(html.includes('type="tel"') && html.includes('inputMode="tel"'));
     assert.ok(html.includes('type="submit"'));
-    assert.ok(html.includes("text-red-700\">*</span>"), "required marker");
+    assert.ok(html.includes("class=\"req\">*</span>"), "required marker");
   }
 });
 

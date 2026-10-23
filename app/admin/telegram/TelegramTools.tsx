@@ -4,10 +4,8 @@ import { useState } from "react";
 import { SEND_ERROR_TEXT } from "@/lib/telegram";
 import { findTelegramChatsAction, sendTelegramTestAction } from "./actions";
 
-const button =
-  "rounded-md bg-blue-800 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-900 disabled:opacity-60";
-const quietButton =
-  "rounded-md border border-zinc-400 bg-white px-4 py-2 text-sm font-semibold text-zinc-900 hover:bg-zinc-50 disabled:opacity-60";
+const button = "btn btn-primary";
+const quietButton = "btn btn-ghost";
 
 const EXTRA: Record<string, string> = {
   too_many_requests: "Too many attempts just now. Please wait a few minutes.",
@@ -52,42 +50,42 @@ export default function TelegramTools({ configured, hasToken }: { configured: bo
   }
 
   return (
-    <div className="space-y-6">
-      <div className="space-y-2 rounded-md border border-zinc-300 p-4">
-        <h2 className="text-base font-semibold">Find your chat ID</h2>
-        <p className="text-sm text-zinc-700">
+    <div className="grid grid-2" style={{ alignItems: "start" }}>
+      <section className="card stack" style={{ ["--gap" as string]: "12px" }}>
+        <h2 className="h2">Find your chat ID</h2>
+        <p className="small muted" style={{ margin: 0, lineHeight: 1.6 }}>
           After you press <strong>Start</strong> in your bot in Telegram, this lists the accounts that recently wrote to it, so you
           can copy your own number into <code>TELEGRAM_FOUNDER_CHAT_ID</code>. Nothing is stored.
         </p>
         <button type="button" className={quietButton} disabled={!hasToken || busy !== ""} onClick={find}>
           {busy === "find" ? "Checking…" : "Find my chat ID"}
         </button>
-        {!hasToken && <p className="text-sm text-zinc-600">Needs TELEGRAM_BOT_TOKEN first (step 1 and 3 below).</p>}
+        {!hasToken && <p className="help" style={{ margin: 0 }}>Needs TELEGRAM_BOT_TOKEN first (step 1 and 3 below).</p>}
         {chats && chats.length > 0 && (
-          <ul className="mt-2 space-y-1 text-sm">
+          <ul className="stack-sm small" style={{ listStyle: "none", padding: 0, margin: 0 }}>
             {chats.map((c) => (
-              <li key={c.chatId} className="rounded bg-zinc-50 px-3 py-2">
-                <span className="font-mono">{c.chatId}</span> {c.name && <span className="text-zinc-600">({c.name})</span>}
+              <li key={c.chatId} className="quote">
+                <span className="mono">{c.chatId}</span> {c.name && <span className="muted">({c.name})</span>}
               </li>
             ))}
           </ul>
         )}
-        {findMsg && <p role="status" className="text-sm font-medium text-zinc-900">{findMsg}</p>}
-      </div>
+        {findMsg && <p role="status" className="notice notice-muted" style={{ fontWeight: 600 }}>{findMsg}</p>}
+      </section>
 
-      <div className="space-y-2 rounded-md border border-zinc-300 p-4">
-        <h2 className="text-base font-semibold">Send a test message</h2>
-        <p className="text-sm text-zinc-700">Sends one short test message to the founder chat only. Nothing is sent unless you press the button.</p>
+      <section className="card stack" style={{ ["--gap" as string]: "12px" }}>
+        <h2 className="h2">Send a test message</h2>
+        <p className="small muted" style={{ margin: 0, lineHeight: 1.6 }}>Sends one short test message to the founder chat only. Nothing is sent unless you press the button.</p>
         <button type="button" className={button} disabled={!configured || busy !== ""} onClick={send}>
           {busy === "send" ? "Sending…" : "Send a test message"}
         </button>
-        {!configured && <p className="text-sm text-zinc-600">Available once both settings are in place.</p>}
+        {!configured && <p className="help" style={{ margin: 0 }}>Available once both settings are in place.</p>}
         {sendMsg && (
-          <p role="status" className={`rounded-md p-3 text-sm font-medium ${sendMsg.ok ? "bg-green-50 text-green-900" : "bg-red-50 text-red-900"}`}>
+          <p role="status" className={`notice ${sendMsg.ok ? "notice-ok" : "notice-warn"}`} style={{ fontWeight: 600 }}>
             {sendMsg.text}
           </p>
         )}
-      </div>
+      </section>
     </div>
   );
 }

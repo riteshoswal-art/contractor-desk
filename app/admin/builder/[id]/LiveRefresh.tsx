@@ -24,16 +24,20 @@ export default function LiveRefresh({ seconds = 4 }: { seconds?: number }) {
   }, [on, seconds, router]);
 
   return (
-    <div className="flex flex-wrap items-center gap-3 rounded-md bg-zinc-50 px-3 py-2 text-sm">
-      <span className="inline-flex items-center gap-2 font-medium">
-        <span aria-hidden="true" className={`inline-block h-2.5 w-2.5 rounded-full ${on ? "animate-pulse bg-green-600" : "bg-zinc-400"}`} />
+    <div className="card flat tint row wrap small" style={{ padding: "8px 8px 8px 16px", gap: 10, borderRadius: "var(--radius-md)" }}>
+      <span className="row grow" style={{ gap: 8, fontWeight: 600 }}>
+        <span
+          aria-hidden="true"
+          className={on ? "animate-pulse" : undefined}
+          style={{ display: "inline-block", width: 10, height: 10, borderRadius: "50%", flex: "none", background: on ? "var(--ok-ink)" : "var(--line-strong)" }}
+        />
         {on ? `Live: checking for new bids every ${seconds} seconds` : "Live updates paused"}
+        {checkedAt && on && <span className="muted" style={{ fontWeight: 400 }}>last checked {checkedAt}</span>}
       </span>
-      {checkedAt && on && <span className="text-zinc-600">last checked {checkedAt}</span>}
-      <button type="button" onClick={() => setOn((x) => !x)} className="rounded-md border border-zinc-400 bg-white px-3 py-1 font-semibold">
+      <button type="button" onClick={() => setOn((x) => !x)} className="btn btn-quiet">
         {on ? "Pause" : "Resume"}
       </button>
-      <button type="button" onClick={() => router.refresh()} className="rounded-md border border-zinc-400 bg-white px-3 py-1 font-semibold">
+      <button type="button" onClick={() => router.refresh()} className="btn btn-ghost" style={{ minHeight: 36, background: "var(--surface)" }}>
         Refresh now
       </button>
     </div>

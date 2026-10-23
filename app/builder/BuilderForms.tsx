@@ -2,14 +2,11 @@
 
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { formatDate } from "@/lib/match";
 import { OTHER_AREA, PUNE_AREAS, TRADES } from "@/lib/registration";
 import { REQUEST_CONSENT_TEXT } from "@/lib/request";
-import { builderTelegramLinkAction, raiseTicketAction, registerBuilderAction, signOutBuilderAction } from "./actions";
-
-const field =
-  "mt-1 block w-full rounded-md border border-zinc-400 bg-white px-3 py-2.5 text-base focus:border-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-700/40 aria-[invalid=true]:border-red-700";
-const label = "block text-sm font-medium text-zinc-900";
-const button = "rounded-md bg-blue-800 px-5 py-3 text-base font-semibold text-white hover:bg-blue-900 disabled:opacity-60";
+import { Icon } from "../ui";
+import { builderTelegramLinkAction, finishAndReviewAction, raiseTicketAction, registerBuilderAction, signOutBuilderAction } from "./actions";
 
 const PROBLEM: Record<string, string> = {
   demo_only: "The builder pages are not available on this server.",
@@ -17,11 +14,35 @@ const PROBLEM: Record<string, string> = {
   not_registered: "Please register first.",
   no_token: "Telegram is not set up on this server.",
   no_bot: "Could not reach the Telegram bot. Please try again.",
+  not_matched: "Choose a contractor on Telegram first.",
+  already_reviewed: "You have already reviewed this job. Thank you!",
 };
 const problemText = (error: string) => PROBLEM[error] ?? "Something went wrong. Please try again.";
 
 function FieldError({ text, id }: { text?: string; id: string }) {
-  return text ? <p id={`${id}-error`} className="mt-1 text-sm font-medium text-red-700">{text}</p> : null;
+  return text ? (
+    <p id={`${id}-error`} className="error" style={{ margin: "6px 0 0" }}>
+      {text}
+    </p>
+  ) : null;
+}
+
+export function Stepper({ now }: { now: 1 | 2 | 3 }) {
+  const steps = ["Your details", "Connect Telegram", "Raise a ticket"];
+  return (
+    <div className="stepper" aria-label={`Step ${now} of 3`}>
+      {steps.map((s, i) => (
+        <div key={s} className={`step ${i + 1 < now ? "done" : i + 1 === now ? "now" : ""}`}>
+          <div className="bar">
+            <i />
+          </div>
+          <div className="cap">
+            {i + 1}. {s}
+          </div>
+        </div>
+      ))}
+    </div>
+  );
 }
 
 // Step 1: register (name, optional company, mobile, consent).
@@ -53,37 +74,49 @@ export function RegisterBuilderForm() {
   }
 
   return (
-    <form onSubmit={submit} noValidate className="space-y-5">
+    <form onSubmit={submit} noValidate className="stack" style={{ ["--gap" as string]: "20px" }}>
       <div>
-        <p className="cb-eyebrow">For builders</p>
-        <h2 className="mt-1.5 text-2xl font-semibold">Register as a builder</h2>
-        <p className="mt-1.5 text-sm text-zinc-600">Takes under a minute.</p>
+        <h1 className="h1">Tell us who you are</h1>
+        <p className="muted" style={{ margin: "6px 0 0" }}>
+          Takes under a minute. Your number is shared only with the contractor you choose.
+        </p>
       </div>
-      <label className={label}>
-        Your name
-        <input className={field} value={v.name} onChange={(e) => setV({ ...v, name: e.target.value })} aria-invalid={Boolean(errors.name)} autoComplete="name" />
-        <FieldError id="name" text={errors.name} />
-      </label>
-      <label className={label}>
-        Company <span className="font-normal text-zinc-600">(optional)</span>
-        <input className={field} value={v.company} onChange={(e) => setV({ ...v, company: e.target.value })} aria-invalid={Boolean(errors.company)} autoComplete="organization" />
-        <FieldError id="company" text={errors.company} />
-      </label>
-      <label className={label}>
-        Mobile number
-        <input inputMode="tel" className={field} value={v.phone} onChange={(e) => setV({ ...v, phone: e.target.value })} aria-invalid={Boolean(errors.phone)} placeholder="98765 43210" autoComplete="tel" />
+      <div className="grid grid-2">
+        <label className="field">
+          <span className="label">Your name</span>
+          <input className="input" value={v.name} onChange={(e) => setV({ ...v, name: e.target.value })} aria-invalid={Boolean(errors.name)} autoComplete="name" />
+          <FieldError id="name" text={errors.name} />
+        </label>
+        <label className="field">
+          <span className="label">
+            Company <span className="opt">(optional)</span>
+          </span>
+          <input className="input" value={v.company} onChange={(e) => setV({ ...v, company: e.target.value })} aria-invalid={Boolean(errors.company)} autoComplete="organization" />
+          <FieldError id="company" text={errors.company} />
+        </label>
+      </div>
+      <label className="field">
+        <span className="label">Mobile number</span>
+        <input className="input" inputMode="tel" value={v.phone} onChange={(e) => setV({ ...v, phone: e.target.value })} aria-invalid={Boolean(errors.phone)} placeholder="98765 43210" autoComplete="tel" />
+        <p className="help">10-digit Indian mobile number. +91 is optional.</p>
         <FieldError id="phone" text={errors.phone} />
       </label>
-      <label className="flex gap-3 text-sm leading-6">
-        <input type="checkbox" className="mt-1 h-5 w-5" checked={v.consent} onChange={(e) => setV({ ...v, consent: e.target.checked })} />
-        <span>
-          I agree that Contractor Desk may store my name, company and mobile number, and share my name and number with the contractor I
-          choose for a job.
-        </span>
+      <label className="check">
+        <input type="checkbox" checked={v.consent} onChange={(e) => setV({ ...v, consent: e.target.checked })} />
+        <span>I agree that Contractor Desk may store my name, company and mobile number, and share my name and number with the contractor I choose for a job.</span>
       </label>
       <FieldError id="consent" text={errors.consent} />
-      {problem && <p role="alert" className="text-sm font-medium text-red-800">{problem}</p>}
-      <button type="submit" disabled={busy} className={button}>{busy ? "Registering…" : "Register"}</button>
+      {problem && (
+        <p role="alert" className="error" style={{ margin: 0 }}>
+          {problem}
+        </p>
+      )}
+      <div className="row between form-nav">
+        <span />
+        <button type="submit" disabled={busy} className="btn btn-primary">
+          {busy ? "Registering…" : "Continue"} <Icon name="arrow" size={16} />
+        </button>
+      </div>
     </form>
   );
 }
@@ -109,18 +142,27 @@ export function ConnectTelegram() {
 
   if (url)
     return (
-      <div className="space-y-2 text-sm leading-6">
-        <a href={url} target="_blank" rel="noreferrer" className={`${button} inline-block`}>Open Telegram</a>
-        <p>
-          Open the link on the phone that should receive the bids and press <b>Start</b>. This page updates by itself. The link works
-          once, for 30 minutes.
+      <div className="stack" style={{ ["--gap" as string]: "10px" }}>
+        <a href={url} target="_blank" rel="noreferrer" className="btn btn-primary" style={{ alignSelf: "flex-start" }}>
+          <Icon name="send" size={16} /> Open Telegram
+        </a>
+        <p className="small muted" style={{ margin: 0 }}>
+          Open it on the phone that should receive the bids and press <b>Start</b>. This page updates by itself. The link works once, for 30 minutes.
         </p>
       </div>
     );
   return (
-    <div className="space-y-2">
-      <button type="button" onClick={make} disabled={busy} className={button}>{busy ? "Preparing…" : "Connect Telegram"}</button>
-      {problem && <p role="alert" className="text-sm font-medium text-red-800">{problem}</p>}
+    <div className="stack" style={{ ["--gap" as string]: "10px" }}>
+      <div>
+        <button type="button" onClick={make} disabled={busy} className="btn btn-primary">
+          <Icon name="send" size={16} /> {busy ? "Preparing…" : "Connect Telegram"}
+        </button>
+      </div>
+      {problem && (
+        <p role="alert" className="error" style={{ margin: 0 }}>
+          {problem}
+        </p>
+      )}
     </div>
   );
 }
@@ -130,7 +172,7 @@ export function SignOut() {
   return (
     <button
       type="button"
-      className="text-sm font-medium text-blue-800 underline"
+      className="btn btn-quiet"
       onClick={async () => {
         await signOutBuilderAction();
         router.refresh();
@@ -141,18 +183,31 @@ export function SignOut() {
   );
 }
 
-// Step 3: raise a ticket. Saved with the same checks as the public request
-// form, then sent straight away to the available contractors on Telegram.
-const EMPTY_TICKET = { trade: "", area: "", otherArea: "", description: "", startDate: "", durationDays: "", notes: "", consent: false };
+// Step 3: raise a ticket, with the Concept B request layout: the form on the
+// left and a live "Your request" summary on the right. Saved with the same
+// checks as the public request form, then sent straight away to the
+// available contractors on Telegram.
+export type TicketInitial = { trade?: string; area?: string; startDate?: string };
 
-export function BuilderTicketForm({ today, connected }: { today: string; connected: boolean }) {
+export function BuilderTicketForm({ today, connected, initial }: { today: string; connected: boolean; initial?: TicketInitial }) {
   const router = useRouter();
-  const [v, setV] = useState(EMPTY_TICKET);
+  const empty = { trade: "", area: "", otherArea: "", description: "", startDate: "", durationDays: "", notes: "", consent: false };
+  const start = {
+    ...empty,
+    trade: initial?.trade && (TRADES as readonly string[]).includes(initial.trade) ? initial.trade : "",
+    area: initial?.area && (PUNE_AREAS as readonly string[]).includes(initial.area) ? initial.area : "",
+    startDate: initial?.startDate && /^\d{4}-\d{2}-\d{2}$/.test(initial.startDate) && initial.startDate >= today ? initial.startDate : "",
+  };
+  const [v, setV] = useState(start);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [busy, setBusy] = useState(false);
   const [problem, setProblem] = useState("");
   const [done, setDone] = useState("");
-  const set = (k: keyof typeof v, value: string | boolean) => setV((old) => ({ ...old, [k]: value }));
+  const set = (k: keyof typeof v, value: string | boolean) => {
+    setV((old) => ({ ...old, [k]: value }));
+    setErrors((e) => ({ ...e, [k]: "" }));
+  };
+  const locality = v.area === OTHER_AREA ? v.otherArea : v.area;
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
@@ -167,7 +222,7 @@ export function BuilderTicketForm({ today, connected }: { today: string; connect
       const area = v.area === OTHER_AREA ? otherArea : v.area;
       const r = await raiseTicketAction({ ...rest, area, durationDays: days === null || Number.isNaN(days) ? null : days });
       if (r.ok) {
-        setV(EMPTY_TICKET);
+        setV(empty);
         setDone(
           r.asked > 0
             ? `Ticket ${r.id} raised. Sent to ${r.asked} available contractor${r.asked === 1 ? "" : "s"} on Telegram.`
@@ -182,82 +237,183 @@ export function BuilderTicketForm({ today, connected }: { today: string; connect
     setBusy(false);
   }
 
+  const summary: [string, string][] = [
+    ["Trade", v.trade || "—"],
+    ["Locality", locality ? `${locality}, Pune` : "—"],
+    ["Needed from", v.startDate ? formatDate(v.startDate) : "—"],
+    ["Duration", v.durationDays.trim() ? `About ${v.durationDays.trim()} days` : "—"],
+  ];
+
   return (
-    <form onSubmit={submit} noValidate className={`space-y-5 rounded-[20px] p-5 ${connected ? "border-2 border-[var(--ink)]" : "border border-[var(--line)]"}`}>
-      <div className="flex items-center justify-between gap-3">
-        <h2 className="text-lg font-semibold">Raise a ticket</h2>
-        <span className="cb-eyebrow !text-[var(--accent)]">Step 2</span>
-      </div>
-      {Object.keys(errors).length > 0 && (
-        <p role="alert" className="rounded-md border border-red-300 bg-red-50 p-3 text-sm text-red-900">Please fix the highlighted fields.</p>
-      )}
-      <div className="grid gap-5 sm:grid-cols-2">
-        <label className={label}>
-          Work needed
-          <select className={field} value={v.trade} onChange={(e) => set("trade", e.target.value)} aria-invalid={Boolean(errors.trade)}>
-            <option value="">Choose…</option>
-            {TRADES.map((t) => <option key={t}>{t}</option>)}
-          </select>
+    <div className="form-layout">
+      <form onSubmit={submit} noValidate className="card form-card stack" style={{ ["--gap" as string]: "22px" }}>
+        <Stepper now={3} />
+        <div>
+          <h1 className="h1">What work do you need?</h1>
+          <p className="muted" style={{ margin: "6px 0 0" }}>
+            These details decide which contractors are asked.
+          </p>
+        </div>
+        {Object.values(errors).some(Boolean) && (
+          <p role="alert" className="notice notice-warn" style={{ margin: 0 }}>
+            Please fix the highlighted fields.
+          </p>
+        )}
+        <div className="field">
+          <span className="label">Trade needed</span>
+          <div className="row wrap" style={{ gap: 8 }}>
+            {TRADES.map((t) => (
+              <button key={t} type="button" className={`chip${v.trade === t ? " on" : ""}`} aria-pressed={v.trade === t} onClick={() => set("trade", t)}>
+                {t}
+              </button>
+            ))}
+          </div>
           <FieldError id="trade" text={errors.trade} />
+        </div>
+        <div className="grid grid-2">
+          <label className="field">
+            <span className="label">Site locality in Pune</span>
+            <select className="select" value={v.area} onChange={(e) => set("area", e.target.value)} aria-invalid={Boolean(errors.area)}>
+              <option value="">Choose a locality</option>
+              {PUNE_AREAS.map((a) => (
+                <option key={a}>{a}</option>
+              ))}
+              <option value={OTHER_AREA}>Other locality</option>
+            </select>
+            <FieldError id="area" text={errors.area} />
+          </label>
+          <label className="field">
+            <span className="label">Needed from</span>
+            <input type="date" min={today} className="input" value={v.startDate} onChange={(e) => set("startDate", e.target.value)} aria-invalid={Boolean(errors.startDate)} />
+            <FieldError id="startDate" text={errors.startDate} />
+          </label>
+        </div>
+        {v.area === OTHER_AREA && (
+          <label className="field">
+            <span className="label">Which locality?</span>
+            <input className="input" value={v.otherArea} onChange={(e) => set("otherArea", e.target.value)} aria-invalid={Boolean(errors.area)} />
+          </label>
+        )}
+        <div className="grid grid-2">
+          <label className="field">
+            <span className="label">Expected duration</span>
+            <div className="suffix-input">
+              <input inputMode="numeric" className="input" value={v.durationDays} onChange={(e) => set("durationDays", e.target.value)} aria-invalid={Boolean(errors.durationDays)} />
+              <span>days</span>
+            </div>
+            <FieldError id="durationDays" text={errors.durationDays} />
+          </label>
+          <label className="field">
+            <span className="label">
+              Other notes <span className="opt">(optional)</span>
+            </span>
+            <input className="input" value={v.notes} onChange={(e) => set("notes", e.target.value)} placeholder="e.g. Work on floors 3 to 5" />
+            <FieldError id="notes" text={errors.notes} />
+          </label>
+        </div>
+        <label className="field">
+          <span className="label">What happened, and what do you need?</span>
+          <textarea
+            className="textarea"
+            value={v.description}
+            onChange={(e) => set("description", e.target.value)}
+            aria-invalid={Boolean(errors.description)}
+            placeholder="e.g. Our plumbing contractor left halfway through. We need concealed piping and bathroom fittings finished in 8 flats."
+          />
+          <p className="help">Please don&apos;t include phone numbers or personal details.</p>
+          <FieldError id="description" text={errors.description} />
         </label>
-        <label className={label}>
-          Site location (Pune locality)
-          <select className={field} value={v.area} onChange={(e) => set("area", e.target.value)} aria-invalid={Boolean(errors.area)}>
-            <option value="">Choose…</option>
-            {PUNE_AREAS.map((a) => <option key={a}>{a}</option>)}
-            <option value={OTHER_AREA}>Other locality</option>
-          </select>
-          <FieldError id="area" text={errors.area} />
+        <label className="check">
+          <input type="checkbox" checked={v.consent} onChange={(e) => set("consent", e.target.checked)} />
+          <span>{REQUEST_CONSENT_TEXT}</span>
         </label>
+        <FieldError id="consent" text={errors.consent} />
+        {!connected && (
+          <p className="notice notice-warn" style={{ margin: 0 }}>
+            <Icon name="info" size={16} />
+            <span>Your Telegram is not connected yet (step 2). If you raise a ticket now, the quotations go to the Contractor Desk team instead of you.</span>
+          </p>
+        )}
+        {problem && (
+          <p role="alert" className="error" style={{ margin: 0 }}>
+            {problem}
+          </p>
+        )}
+        {done && (
+          <p role="status" className="notice notice-ok" style={{ margin: 0 }}>
+            <Icon name="check" size={16} />
+            <span>{done}</span>
+          </p>
+        )}
+        <div className="row between form-nav">
+          <span className="help" style={{ margin: 0 }}>
+            Available contractors are asked on Telegram straight away.
+          </span>
+          <button type="submit" disabled={busy} className="btn btn-primary">
+            {busy ? "Sending…" : "Raise ticket"} <Icon name="arrow" size={16} />
+          </button>
+        </div>
+      </form>
+      <aside className="card tint stack summary" style={{ ["--gap" as string]: "14px" }}>
+        <span className="eyebrow">Your request</span>
+        {summary.map(([k, val]) => (
+          <div key={k} className="row between">
+            <span className="muted small">{k}</span>
+            <span className="h3">{val}</span>
+          </div>
+        ))}
+        <hr className="divider" />
+        <div className="stack small" style={{ ["--gap" as string]: "10px" }}>
+          <div className="row" style={{ alignItems: "flex-start" }}>
+            <Icon name="lock" size={16} />
+            <span>Your number is shared only with the contractor you choose.</span>
+          </div>
+          <div className="row" style={{ alignItems: "flex-start" }}>
+            <Icon name="info" size={16} />
+            <span>Each available contractor sends one quote. You compare like for like, then choose.</span>
+          </div>
+        </div>
+      </aside>
+    </div>
+  );
+}
+
+// After the match: mark the work as finished and review the contractor.
+export function FinishAndReview({ requestId, name }: { requestId: string; name: string }) {
+  const router = useRouter();
+  const [busy, setBusy] = useState(false);
+  const [problem, setProblem] = useState("");
+  return (
+    <div className="stack" style={{ ["--gap" as string]: "8px" }}>
+      <div>
+        <button
+          type="button"
+          className="btn btn-ghost"
+          disabled={busy}
+          onClick={async () => {
+            setBusy(true);
+            setProblem("");
+            try {
+              const r = await finishAndReviewAction(requestId);
+              if (r.ok) {
+                router.push(r.reviewPath);
+                return;
+              }
+              setProblem(problemText(r.error));
+            } catch {
+              setProblem(problemText(""));
+            }
+            setBusy(false);
+          }}
+        >
+          <Icon name="star" size={16} /> {busy ? "Opening…" : `Work finished? Rate ${name.split(" ")[0]}`}
+        </button>
       </div>
-      {v.area === OTHER_AREA && (
-        <label className={label}>
-          Which locality?
-          <input className={field} value={v.otherArea} onChange={(e) => set("otherArea", e.target.value)} aria-invalid={Boolean(errors.area)} />
-        </label>
-      )}
-      <label className={label}>
-        Work description
-        <textarea
-          className={field}
-          rows={3}
-          value={v.description}
-          onChange={(e) => set("description", e.target.value)}
-          aria-invalid={Boolean(errors.description)}
-          placeholder="e.g. Plumbing for 12 flats on floors 3 and 4: concealed piping and bathroom fittings."
-        />
-        <FieldError id="description" text={errors.description} />
-      </label>
-      <div className="grid gap-5 sm:grid-cols-2">
-        <label className={label}>
-          Start date
-          <input type="date" min={today} className={field} value={v.startDate} onChange={(e) => set("startDate", e.target.value)} aria-invalid={Boolean(errors.startDate)} />
-          <FieldError id="startDate" text={errors.startDate} />
-        </label>
-        <label className={label}>
-          How many days (estimate)
-          <input inputMode="numeric" className={field} value={v.durationDays} onChange={(e) => set("durationDays", e.target.value)} aria-invalid={Boolean(errors.durationDays)} placeholder="e.g. 7" />
-          <FieldError id="durationDays" text={errors.durationDays} />
-        </label>
-      </div>
-      <label className={label}>
-        Notes <span className="font-normal text-zinc-600">(optional)</span>
-        <input className={field} value={v.notes} onChange={(e) => set("notes", e.target.value)} placeholder="e.g. Material on site; work 9am to 6pm" />
-        <FieldError id="notes" text={errors.notes} />
-      </label>
-      <label className="flex gap-3 text-sm leading-6">
-        <input type="checkbox" className="mt-1 h-5 w-5" checked={v.consent} onChange={(e) => set("consent", e.target.checked)} />
-        <span>{REQUEST_CONSENT_TEXT}</span>
-      </label>
-      <FieldError id="consent" text={errors.consent} />
-      {problem && <p role="alert" className="text-sm font-medium text-red-800">{problem}</p>}
-      {!connected && (
-        <p className="rounded-md border border-amber-300 bg-amber-50 p-3 text-sm text-amber-900">
-          Your Telegram is not connected yet (step 1). If you raise a ticket now, the quotations go to the Contractor Desk team instead of you.
+      {problem && (
+        <p role="alert" className="error" style={{ margin: 0 }}>
+          {problem}
         </p>
       )}
-      {done && <p role="status" className="rounded-md border border-green-300 bg-green-50 p-3 text-sm text-green-900">{done}</p>}
-      <button type="submit" disabled={busy} className={button}>{busy ? "Sending…" : "Raise ticket"}</button>
-    </form>
+    </div>
   );
 }
