@@ -3,6 +3,7 @@ import { connection } from "next/server";
 import { Suspense } from "react";
 import { raiseRequestHref } from "@/lib/fixtures";
 import { todayInIndia } from "@/lib/registration";
+import ContactForm from "./ContactForm";
 import HomeSearch from "./HomeSearch";
 import SiteHeader from "./SiteHeader";
 import { Icon, Roads, type IconName } from "./ui";
@@ -107,6 +108,15 @@ export default function Home() {
               </div>
             ))}
           </div>
+        </section>
+
+        <section id="contact" className="ed-split page-pad">
+          <div className="stack" style={{ ["--gap" as string]: "16px" }}>
+            <span className="kicker-line">Contact us</span>
+            <h2 className="h-display h-display-sm">Questions? Ask us anything</h2>
+            <p className="lead">Builders, site engineers and contractors: send a message and we&apos;ll reply by email within 1–2 working days.</p>
+          </div>
+          <ContactForm />
         </section>
 
         <section className="band page-pad">
