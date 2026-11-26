@@ -17,7 +17,7 @@ import type { LanguageCode } from "./language";
 const EN = {
   common: {
     back: "← Back to home",
-    brand: "Contractor Desk for Pune Developers",
+    brand: "Mera Karigar for Pune Developers",
     languageLabel: "Language",
     languageHelp: "Choose the language for this form and for the messages we send you",
     optional: "(optional)",
@@ -144,7 +144,7 @@ const EN = {
     thanks: "Thank you. Your review has been received.",
     failed: "Sorry, we could not save your review. Nothing was saved. Please try again later.",
     alreadyDone: "Feedback for this job has already been received. Thank you.",
-    linkBad: "This link does not work. It may have expired or been replaced. Please ask the Contractor Desk team for a new one.",
+    linkBad: "This link does not work. It may have expired or been replaced. Please ask the Mera Karigar team for a new one.",
     translationPending: "Your original text was saved exactly as you wrote it. An English version for our team is still pending.",
   },
   bid: {
@@ -155,9 +155,9 @@ const EN = {
     neededFrom: "Needed from {date}",
     duration: "About {days} days",
     provisionalNote:
-      "Your start date for this job still needs to be confirmed with the Contractor Desk team. You can send your price now, but it will count only after your start date is confirmed.",
+      "Your start date for this job still needs to be confirmed with the Mera Karigar team. You can send your price now, but it will count only after your start date is confirmed.",
     onceNote:
-      "You can send only one bid for this job. After you send it, you cannot change it or send another. Please check it before sending. If you make a mistake, tell the Contractor Desk team.",
+      "You can send only one bid for this job. After you send it, you cannot change it or send another. Please check it before sending. If you make a mistake, tell the Mera Karigar team.",
     amountLabel: "Your price (in rupees)",
     amountHelp: "Numbers only, for example 1250 or 1250.50",
     unitLabel: "How is this price charged?",
@@ -173,12 +173,12 @@ const EN = {
     notesHelp: "For example what is included. Please do not include phone numbers.",
     submit: "Send my bid",
     submitting: "Sending…",
-    thanks: "Thank you. Your bid has been received. If the developer wants to go ahead, the Contractor Desk team may contact you.",
+    thanks: "Thank you. Your bid has been received. If the developer wants to go ahead, the Mera Karigar team may contact you.",
     thanksProvisional:
-      "Thank you. Your bid has been received. It will count only after the Contractor Desk team confirms your start date with you.",
+      "Thank you. Your bid has been received. It will count only after the Mera Karigar team confirms your start date with you.",
     failed: "Sorry, we could not save your bid. Nothing was saved. Please try again later.",
     alreadyDone: "A bid from you for this job has already been received. Thank you. It cannot be changed here.",
-    linkBad: "This link does not work. It may have expired or been replaced. Please ask the Contractor Desk team for a new one.",
+    linkBad: "This link does not work. It may have expired or been replaced. Please ask the Mera Karigar team for a new one.",
     closed: "Bidding for this job is closed. Thank you.",
   },
   consent: {
@@ -239,7 +239,7 @@ export type ValidationKey = keyof Dict["validation"];
 const HI: Dict = {
   common: {
     back: "← होम पेज पर वापस जाएँ",
-    brand: "पुणे के डेवलपर्स के लिए Contractor Desk",
+    brand: "पुणे के डेवलपर्स के लिए Mera Karigar",
     languageLabel: "भाषा",
     languageHelp: "इस फ़ॉर्म और हमारे भेजे जाने वाले संदेशों के लिए भाषा चुनें",
     optional: "(वैकल्पिक)",
@@ -365,7 +365,7 @@ const HI: Dict = {
     thanks: "धन्यवाद। आपकी समीक्षा मिल गई है।",
     failed: "क्षमा करें, हम आपकी समीक्षा सहेज नहीं सके। कुछ भी सहेजा नहीं गया। कृपया बाद में फिर कोशिश करें।",
     alreadyDone: "इस काम की राय पहले ही मिल चुकी है। धन्यवाद।",
-    linkBad: "यह लिंक काम नहीं करता। हो सकता है इसकी समय-सीमा खत्म हो गई हो या इसकी जगह नया लिंक बन गया हो। कृपया Contractor Desk टीम से नया लिंक माँगें।",
+    linkBad: "यह लिंक काम नहीं करता। हो सकता है इसकी समय-सीमा खत्म हो गई हो या इसकी जगह नया लिंक बन गया हो। कृपया Mera Karigar टीम से नया लिंक माँगें।",
     translationPending: "आपका मूल पाठ जैसा आपने लिखा वैसा ही सहेजा गया है। हमारी टीम के लिए अंग्रेज़ी रूप अभी बाकी है।",
   },
   bid: {
@@ -376,9 +376,9 @@ const HI: Dict = {
     neededFrom: "{date} से चाहिए",
     duration: "लगभग {days} दिन",
     provisionalNote:
-      "इस काम के लिए आपकी शुरुआत की तारीख की पुष्टि Contractor Desk टीम के साथ होनी बाकी है। आप अभी कीमत भेज सकते हैं, लेकिन वह तारीख की पुष्टि के बाद ही गिनी जाएगी।",
+      "इस काम के लिए आपकी शुरुआत की तारीख की पुष्टि Mera Karigar टीम के साथ होनी बाकी है। आप अभी कीमत भेज सकते हैं, लेकिन वह तारीख की पुष्टि के बाद ही गिनी जाएगी।",
     onceNote:
-      "आप इस काम के लिए केवल एक बोली भेज सकते हैं। भेजने के बाद आप उसे बदल नहीं सकते और न ही दूसरी बोली भेज सकते हैं। कृपया भेजने से पहले जाँच लें। गलती हो जाए तो Contractor Desk टीम को बताइए।",
+      "आप इस काम के लिए केवल एक बोली भेज सकते हैं। भेजने के बाद आप उसे बदल नहीं सकते और न ही दूसरी बोली भेज सकते हैं। कृपया भेजने से पहले जाँच लें। गलती हो जाए तो Mera Karigar टीम को बताइए।",
     amountLabel: "आपकी कीमत (रुपये में)",
     amountHelp: "केवल अंक, जैसे 1250 या 1250.50",
     unitLabel: "यह कीमत कैसे ली जाती है?",
@@ -394,12 +394,12 @@ const HI: Dict = {
     notesHelp: "जैसे उसमें क्या शामिल है। कृपया फ़ोन नंबर न लिखें।",
     submit: "मेरी बोली भेजें",
     submitting: "भेजा जा रहा है…",
-    thanks: "धन्यवाद। आपकी बोली मिल गई है। अगर डेवलपर आगे बढ़ना चाहें तो Contractor Desk टीम आपसे संपर्क कर सकती है।",
+    thanks: "धन्यवाद। आपकी बोली मिल गई है। अगर डेवलपर आगे बढ़ना चाहें तो Mera Karigar टीम आपसे संपर्क कर सकती है।",
     thanksProvisional:
-      "धन्यवाद। आपकी बोली मिल गई है। वह तभी गिनी जाएगी जब Contractor Desk टीम आपके साथ आपकी शुरुआत की तारीख की पुष्टि कर लेगी।",
+      "धन्यवाद। आपकी बोली मिल गई है। वह तभी गिनी जाएगी जब Mera Karigar टीम आपके साथ आपकी शुरुआत की तारीख की पुष्टि कर लेगी।",
     failed: "क्षमा करें, हम आपकी बोली सहेज नहीं सके। कुछ भी सहेजा नहीं गया। कृपया बाद में फिर कोशिश करें।",
     alreadyDone: "इस काम के लिए आपकी बोली पहले ही मिल चुकी है। धन्यवाद। उसे यहाँ बदला नहीं जा सकता।",
-    linkBad: "यह लिंक काम नहीं करता। हो सकता है इसकी समय-सीमा खत्म हो गई हो या इसकी जगह नया लिंक बन गया हो। कृपया Contractor Desk टीम से नया लिंक माँगें।",
+    linkBad: "यह लिंक काम नहीं करता। हो सकता है इसकी समय-सीमा खत्म हो गई हो या इसकी जगह नया लिंक बन गया हो। कृपया Mera Karigar टीम से नया लिंक माँगें।",
     closed: "इस काम के लिए बोली बंद हो चुकी है। धन्यवाद।",
   },
   consent: {
@@ -456,7 +456,7 @@ const HI: Dict = {
 const MR: Dict = {
   common: {
     back: "← मुख्य पृष्ठावर परत जा",
-    brand: "पुण्यातील डेव्हलपर्ससाठी Contractor Desk",
+    brand: "पुण्यातील डेव्हलपर्ससाठी Mera Karigar",
     languageLabel: "भाषा",
     languageHelp: "या फॉर्मसाठी आणि आम्ही पाठवणाऱ्या संदेशांसाठी भाषा निवडा",
     optional: "(ऐच्छिक)",
@@ -582,7 +582,7 @@ const MR: Dict = {
     thanks: "धन्यवाद. तुमचे परीक्षण मिळाले आहे.",
     failed: "क्षमस्व, आम्ही तुमचे परीक्षण जतन करू शकलो नाही. काहीही जतन झाले नाही. कृपया नंतर पुन्हा प्रयत्न करा.",
     alreadyDone: "या कामाचा अभिप्राय आधीच मिळाला आहे. धन्यवाद.",
-    linkBad: "हा दुवा चालत नाही. त्याची मुदत संपली असेल किंवा त्याऐवजी नवीन दुवा तयार झाला असेल. कृपया Contractor Desk टीमकडून नवीन दुवा मागा.",
+    linkBad: "हा दुवा चालत नाही. त्याची मुदत संपली असेल किंवा त्याऐवजी नवीन दुवा तयार झाला असेल. कृपया Mera Karigar टीमकडून नवीन दुवा मागा.",
     translationPending: "तुमचा मूळ मजकूर तुम्ही लिहिल्याप्रमाणेच जतन केला आहे. आमच्या टीमसाठी इंग्रजी रूप अजून बाकी आहे.",
   },
   bid: {
@@ -593,9 +593,9 @@ const MR: Dict = {
     neededFrom: "{date} पासून हवे",
     duration: "सुमारे {days} दिवस",
     provisionalNote:
-      "या कामासाठी तुमच्या सुरू करण्याच्या तारखेची खात्री Contractor Desk टीमसोबत अजून व्हायची आहे. तुम्ही आता किंमत पाठवू शकता, पण तारखेची खात्री झाल्यानंतरच ती ग्राह्य धरली जाईल.",
+      "या कामासाठी तुमच्या सुरू करण्याच्या तारखेची खात्री Mera Karigar टीमसोबत अजून व्हायची आहे. तुम्ही आता किंमत पाठवू शकता, पण तारखेची खात्री झाल्यानंतरच ती ग्राह्य धरली जाईल.",
     onceNote:
-      "या कामासाठी तुम्ही फक्त एकच बोली पाठवू शकता. पाठवल्यानंतर ती बदलता येत नाही आणि दुसरी पाठवता येत नाही. कृपया पाठवण्यापूर्वी तपासा. चूक झाली तर Contractor Desk टीमला सांगा.",
+      "या कामासाठी तुम्ही फक्त एकच बोली पाठवू शकता. पाठवल्यानंतर ती बदलता येत नाही आणि दुसरी पाठवता येत नाही. कृपया पाठवण्यापूर्वी तपासा. चूक झाली तर Mera Karigar टीमला सांगा.",
     amountLabel: "तुमची किंमत (रुपयांत)",
     amountHelp: "फक्त अंक, उदा. 1250 किंवा 1250.50",
     unitLabel: "ही किंमत कशी आकारली जाते?",
@@ -611,12 +611,12 @@ const MR: Dict = {
     notesHelp: "उदा. त्यात काय समाविष्ट आहे. कृपया फोन नंबर लिहू नका.",
     submit: "माझी बोली पाठवा",
     submitting: "पाठवत आहे…",
-    thanks: "धन्यवाद. तुमची बोली मिळाली आहे. डेवलपरला पुढे जायचे असल्यास Contractor Desk टीम तुमच्याशी संपर्क करू शकते.",
+    thanks: "धन्यवाद. तुमची बोली मिळाली आहे. डेवलपरला पुढे जायचे असल्यास Mera Karigar टीम तुमच्याशी संपर्क करू शकते.",
     thanksProvisional:
-      "धन्यवाद. तुमची बोली मिळाली आहे. Contractor Desk टीम तुमच्यासोबत सुरू करण्याच्या तारखेची खात्री करेपर्यंत ती ग्राह्य धरली जाणार नाही.",
+      "धन्यवाद. तुमची बोली मिळाली आहे. Mera Karigar टीम तुमच्यासोबत सुरू करण्याच्या तारखेची खात्री करेपर्यंत ती ग्राह्य धरली जाणार नाही.",
     failed: "क्षमस्व, तुमची बोली जतन करता आली नाही. काहीही जतन झाले नाही. कृपया नंतर पुन्हा प्रयत्न करा.",
     alreadyDone: "या कामासाठी तुमची बोली आधीच मिळाली आहे. धन्यवाद. ती इथे बदलता येत नाही.",
-    linkBad: "हा दुवा चालत नाही. त्याची मुदत संपली असेल किंवा त्याऐवजी नवीन दुवा तयार झाला असेल. कृपया Contractor Desk टीमकडून नवीन दुवा मागा.",
+    linkBad: "हा दुवा चालत नाही. त्याची मुदत संपली असेल किंवा त्याऐवजी नवीन दुवा तयार झाला असेल. कृपया Mera Karigar टीमकडून नवीन दुवा मागा.",
     closed: "या कामासाठी बोली बंद झाली आहे. धन्यवाद.",
   },
   consent: {

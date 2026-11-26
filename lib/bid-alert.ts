@@ -30,7 +30,7 @@ export function composeBidAlert(args: {
   link: string;
 }): string {
   return [
-    "Contractor Desk · New bid received",
+    "Mera Karigar · New bid received",
     `Ticket: ${args.requestId} (${args.trade} in ${args.area})`,
     `Contractor: ${args.contractorName}`,
     `Quote: ${args.price}`,

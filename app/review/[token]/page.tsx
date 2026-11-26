@@ -11,7 +11,7 @@ import { Icon, Stage } from "../../ui";
 
 // A private link: it must not be indexed, cached or shared by search engines.
 export const metadata: Metadata = {
-  title: "Rate the job | Contractor Desk",
+  title: "Rate the job | Mera Karigar",
   robots: { index: false, follow: false },
 };
 

@@ -112,7 +112,7 @@ export async function askContractors(sheet: ContractorSheet, requestId: string, 
     const id = shortId();
     const description = redactContacts(request.description).slice(0, 500);
     const lines = [
-      "Contractor Desk · New job",
+      "Mera Karigar · New job",
       `Hi ${c.name || "there"}, a builder needs this work:`,
       "",
       ...jobLines(request),
@@ -334,7 +334,7 @@ export async function sendSummary(sheet: ContractorSheet, requestId: string, con
   }
   const summaryId = shortId();
   const options: { bidId: string; contractorId: string }[] = [];
-  const lines = [previous ? "Contractor Desk · Updated bids: a new quote arrived" : "Contractor Desk · Bids for your ticket",`Ticket ${requestId}: ${request.trade} in ${request.area}`, ...jobLines(request).slice(1), ""];
+  const lines = [previous ? "Mera Karigar · Updated bids: a new quote arrived" : "Mera Karigar · Bids for your ticket",`Ticket ${requestId}: ${request.trade} in ${request.area}`, ...jobLines(request).slice(1), ""];
   if (rows.length === 0) lines.push("No contractor sent a quotation for this ticket.");
   else {
     lines.push("Prices are compared only within the same unit. We never add them up into a total.");
@@ -362,7 +362,7 @@ export async function sendSummary(sheet: ContractorSheet, requestId: string, con
       return [{ text: `Choose ${n + 1}. ${nameOf(b.contractorId)}`.slice(0, 60), data: `p:${summaryId}:${n}` }];
     });
   if (buttons.length) lines.push("Tap a button to choose. You'll then get the contractor's number, and they'll get yours.");
-  if (dest?.to === "founder") lines.unshift("(Sent to the Contractor Desk team: the builder has not connected Telegram.)");
+  if (dest?.to === "founder") lines.unshift("(Sent to the Mera Karigar team: the builder has not connected Telegram.)");
 
   const summary: BidSummary = { id: summaryId, requestId, sentAt: nowOf(env).toISOString(), to: dest?.to ?? "nobody", options };
   if (dest) {
@@ -423,7 +423,7 @@ async function handlePick(sheet: ContractorSheet, t: IncomingTap, summaryId: str
   const contractorName = shared.ok ? shared.contractorName : option.contractorId;
   const contractorPhone = shared.ok && shared.phone ? shared.phone : "not available";
   const builderName = builder ? `${builder.name}${builder.company ? ` (${builder.company})` : ""}` : request?.developerName || "the builder";
-  const builderPhone = builder?.phone ?? "shared by Contractor Desk";
+  const builderPhone = builder?.phone ?? "shared by Mera Karigar";
   const job = request ? `${request.trade} in ${request.area}` : summary.requestId;
 
   await sendToChat(env.token, t.chatId, `Matched for ticket ${summary.requestId} (${job}).\nContractor: ${contractorName}\nQuote: ${bid ? formatBidPrice(bid.amount, bid.unit) : "-"}\nPhone: ${contractorPhone}\nWe have also sent them your name and number.`, env.fetchImpl);

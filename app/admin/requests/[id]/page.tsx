@@ -30,7 +30,7 @@ import { BackLink, Notice, RequestMeta } from "./detail-ui";
 import { loadBidWorkspace, type BidWorkspace } from "./bid-data";
 import { loadJobWorkspace, type JobWorkspace } from "./job-data";
 
-export const metadata: Metadata = { title: "Request | Contractor Desk" };
+export const metadata: Metadata = { title: "Request | Mera Karigar" };
 
 export default function RequestDetailPage(
   props: PageProps<"/admin/requests/[id]">,

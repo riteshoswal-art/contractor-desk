@@ -1,52 +1,52 @@
 @import "tailwindcss";
 
-/* Concept B ("Editorial"): bright white, large confident type, black primary
-   actions and one warm orange accent. The design tokens live here so every page
-   picks them up, including the pages styled with plain Tailwind classes. */
+/* Mera Karigar: warm cream background, warm near-black ink, a bronze accent
+   and Montserrat. The full token set is in concept-b.css; these keep the pages
+   styled with plain Tailwind classes in step. */
 :root {
-  --background: #ffffff;
-  --foreground: #0e0e0e;
-  --ink: #0e0e0e;
-  --muted: #6b6b6b;
-  --line: #ececea;
-  --line-strong: #dcdcd8;
-  --surface-2: #f5f5f3;
-  --accent: #f0542d;
-  --ring: rgba(240, 84, 45, 0.18);
-  --ok-bg: #e8f5ec;
-  --ok-ink: #1d6b3a;
-  --warn-bg: #fff1e6;
-  --warn-ink: #9a4410;
+  --background: #f8f5f0;
+  --foreground: #1f1b16;
+  --ink: #1f1b16;
+  --muted: #7a7268;
+  --line: #ebe4d9;
+  --line-strong: #ddd3c4;
+  --surface-2: #f2ede5;
+  --accent: #a87b4f;
+  --ring: rgba(168, 123, 79, 0.18);
+  --ok-bg: #e9f3ea;
+  --ok-ink: #2d6a3e;
+  --warn-bg: #f8ecdd;
+  --warn-ink: #8a5422;
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --color-accent: var(--accent);
-  --font-sans: var(--font-inter);
-  --font-display: var(--font-inter-tight);
+  --font-sans: var(--font-montserrat);
+  --font-display: var(--font-montserrat);
   --font-mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
 }
 
-/* The app's former blue actions become Concept B ink (black), its focus colour
-   becomes the orange accent, and the light blues become warm tints. Grey
-   (zinc), green, amber and red keep their meaning. */
+/* The app's former blue actions become Mera Karigar ink (warm black), its
+   focus colour becomes the bronze accent, and the light blues become warm
+   tints. Grey (zinc), green, amber and red keep their meaning. */
 @theme {
-  --color-blue-50: #fff5f1;
-  --color-blue-100: #ffe9e1;
-  --color-blue-200: #ffd6c8;
-  --color-blue-700: #f0542d;
-  --color-blue-800: #0e0e0e;
-  --color-blue-900: #2b2b2b;
-  --color-blue-950: #0e0e0e;
-  --color-sky-50: #f5f5f3;
-  --color-sky-100: #ecece9;
-  --color-sky-200: #dcdcd8;
-  --color-sky-300: #dcdcd8;
-  --color-sky-700: #0e0e0e;
-  --color-sky-800: #2b2b2b;
-  --color-sky-900: #0e0e0e;
-  --color-sky-950: #0e0e0e;
+  --color-blue-50: #f8f1e7;
+  --color-blue-100: #f1e5d4;
+  --color-blue-200: #e6d3b8;
+  --color-blue-700: #a87b4f;
+  --color-blue-800: #1f1b16;
+  --color-blue-900: #3a332b;
+  --color-blue-950: #1f1b16;
+  --color-sky-50: #f2ede5;
+  --color-sky-100: #ebe4d9;
+  --color-sky-200: #ddd3c4;
+  --color-sky-300: #ddd3c4;
+  --color-sky-700: #1f1b16;
+  --color-sky-800: #3a332b;
+  --color-sky-900: #1f1b16;
+  --color-sky-950: #1f1b16;
   --radius-md: 12px;
   --radius-lg: 20px;
   --radius-xl: 28px;

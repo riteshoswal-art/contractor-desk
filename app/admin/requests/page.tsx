@@ -15,7 +15,7 @@ import { Icon } from "../../ui";
 import AdminShell from "../AdminShell";
 import { loadOverview } from "./overview";
 
-export const metadata: Metadata = { title: "Requests | Contractor Desk" };
+export const metadata: Metadata = { title: "Requests | Mera Karigar" };
 
 export default function RequestsPage() {
   return (

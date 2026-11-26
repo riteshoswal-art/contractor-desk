@@ -18,7 +18,7 @@ import SiteHeader from "../SiteHeader";
 import { Icon } from "../ui";
 import { BuilderTicketForm, ConnectTelegram, FinishAndReview, RegisterBuilderForm, SignOut, Stepper, type TicketInitial } from "./BuilderForms";
 
-export const metadata: Metadata = { title: "Raise a request | Contractor Desk" };
+export const metadata: Metadata = { title: "Raise a request | Mera Karigar" };
 
 // The builder's page (local data mode only): register, connect Telegram, raise
 // a ticket, follow it until a contractor is chosen, then finish and review.

@@ -19,7 +19,7 @@ import { Avatar, BackLink, Notice, RequestMeta } from "../../requests/[id]/detai
 import LiveRefresh from "./LiveRefresh";
 import MatchesPanel, { type MatchRow } from "./MatchesPanel";
 
-export const metadata: Metadata = { title: "Ticket | Contractor Desk" };
+export const metadata: Metadata = { title: "Ticket | Mera Karigar" };
 
 export default function TicketPage(props: PageProps<"/admin/builder/[id]">) {
   return (

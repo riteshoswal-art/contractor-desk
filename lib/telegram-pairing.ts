@@ -78,7 +78,7 @@ export function applyStart(
       connected: { kind: "builder", id: builder.id, name: builder.name },
       reply: {
         chatId: m.chatId,
-        text: `Contractor Desk\nConnected, ${builder.name}. When contractors send quotations for your tickets, the bids will arrive here and you can choose one with a tap.`,
+        text: `Mera Karigar\nConnected, ${builder.name}. When contractors send quotations for your tickets, the bids will arrive here and you can choose one with a tap.`,
       },
     };
   }
@@ -93,7 +93,7 @@ export function applyStart(
     connected: { kind: "contractor", id: contractor.id, name: contractor.name },
     reply: {
       chatId: m.chatId,
-      text: `Contractor Desk\nConnected. Job opportunities that match your registration as ${contractor.name || contractor.id} will arrive here. You can answer them with the buttons.`,
+      text: `Mera Karigar\nConnected. Job opportunities that match your registration as ${contractor.name || contractor.id} will arrive here. You can answer them with the buttons.`,
     },
   };
 }

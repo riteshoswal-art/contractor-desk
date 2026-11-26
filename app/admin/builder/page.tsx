@@ -9,7 +9,7 @@ import { Icon } from "../../ui";
 import AdminShell from "../AdminShell";
 import TicketForm from "./TicketForm";
 
-export const metadata: Metadata = { title: "Tickets | Contractor Desk" };
+export const metadata: Metadata = { title: "Tickets | Mera Karigar" };
 
 export default function BuilderPage() {
   return (

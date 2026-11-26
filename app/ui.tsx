@@ -25,6 +25,17 @@ const ICON_PATHS = {
   phone: "M8 3h8a1 1 0 011 1v16a1 1 0 01-1 1H8a1 1 0 01-1-1V4a1 1 0 011-1zM11 18h2",
   chat: "M5 5h14v10H9l-4 4z",
   send: "M4 12l16-8-6 16-2-6-8-2z",
+  search: "M11 18a7 7 0 100-14 7 7 0 000 14zM20 20l-4-4",
+  arrowUpRight: "M7 17L17 7M8 7h9v9",
+  mail: "M4 6h16v12H4zM4 7l8 6 8-6",
+  brick: "M3 6h18v12H3zM3 12h18M9 6v6M15 12v6",
+  drop: "M12 3.5s-6 6.6-6 10.5a6 6 0 0012 0c0-3.9-6-10.5-6-10.5z",
+  bolt: "M13 2L5 13h6l-1 9 8-11h-6z",
+  brush: "M4 20c2.5 0 4-1.4 4-3.5a2.5 2.5 0 015 0M11 14l8-9a1.8 1.8 0 012.5 2.5l-9 8",
+  saw: "M3 15l11-11 6 6-11 11H3zM7 15l2 2M10 12l2 2M13 9l2 2",
+  hammer: "M14 6l4 4M12 8l6-6 4 4-6 6M13 9L4 18a1.4 1.4 0 002 2l9-9",
+  hardhat: "M4 17h16M5 17v-2a7 7 0 0114 0v2M10 8V5h4v3",
+  calendar: "M7 3v3M17 3v3M4 9h16M5 6h14a1 1 0 011 1v12a1 1 0 01-1 1H5a1 1 0 01-1-1V7a1 1 0 011-1z",
 } as const;
 
 export type IconName = keyof typeof ICON_PATHS;
@@ -49,12 +60,30 @@ export function Icon({ name, size = 18, className }: { name: IconName; size?: nu
   );
 }
 
-export function Logo({ size = 28 }: { size?: number }) {
+// The Mera Karigar mark: a thin-line monogram, a roof over an "M", drawn in
+// the current colour (bronze on light backgrounds, gold over photos).
+export function Logo({ size = 34 }: { size?: number }) {
   return (
-    <svg width={size} height={size} viewBox="0 0 28 28" aria-hidden="true" style={{ display: "block", flex: "none" }}>
-      <rect width="28" height="28" rx="8" fill="currentColor" />
-      <path d="M7 19h14M9 19v-6h4v6M15 19V9h4v10" stroke="var(--logo-ink, #fff)" strokeWidth="2" fill="none" strokeLinecap="round" strokeLinejoin="round" />
+    <svg className="mk-logo" width={size} height={size} viewBox="0 0 34 34" aria-hidden="true" style={{ display: "block", flex: "none" }}>
+      <g fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
+        <rect x="1.5" y="1.5" width="31" height="31" rx="3" />
+        <path d="M8 13.5L17 7l9 6.5" />
+        <path d="M10 26V16l7 5.5 7-5.5v10" />
+      </g>
     </svg>
+  );
+}
+
+// Logo plus the two-line wordmark used in the header and footer.
+export function Brand() {
+  return (
+    <>
+      <Logo />
+      <span className="brand-word">
+        <b>Mera Karigar</b>
+        <small>Contractors · Pune</small>
+      </span>
+    </>
   );
 }
 

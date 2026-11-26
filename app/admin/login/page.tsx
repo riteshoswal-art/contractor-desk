@@ -3,7 +3,7 @@ import LoginForm from "./LoginForm";
 import SiteHeader from "../../SiteHeader";
 import { Icon } from "../../ui";
 
-export const metadata: Metadata = { title: "Admin login | Contractor Desk" };
+export const metadata: Metadata = { title: "Admin login | Mera Karigar" };
 
 export default function LoginPage() {
   return (
@@ -20,7 +20,7 @@ export default function LoginPage() {
               Admin login
             </h1>
             <p className="muted" style={{ margin: "6px 0 0" }}>
-              For the Contractor Desk founder only.
+              For the Mera Karigar founder only.
             </p>
           </div>
           <LoginForm />

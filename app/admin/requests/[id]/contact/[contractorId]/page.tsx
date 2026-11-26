@@ -13,7 +13,7 @@ import { Icon } from "../../../../../ui";
 import { Avatar, BackLink, Notice } from "../../detail-ui";
 import ContactComposer from "./ContactComposer";
 
-export const metadata: Metadata = { title: "Prepare message | Contractor Desk" };
+export const metadata: Metadata = { title: "Prepare message | Mera Karigar" };
 
 type Props = PageProps<"/admin/requests/[id]/contact/[contractorId]">;
 

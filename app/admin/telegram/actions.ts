@@ -23,7 +23,7 @@ export async function sendTelegramTestAction(): Promise<TestSendResult> {
   const result = await sendDemoMessage(
     telegramConfig(),
     [
-      "Contractor Desk · Test message",
+      "Mera Karigar · Test message",
       "Test message from the operator page. If you can read this, the Telegram connection works.",
       `Data mode on the server: ${getRecordType()}.`,
       "No contractor was contacted.",

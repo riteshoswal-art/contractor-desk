@@ -12,7 +12,7 @@ import AdminShell from "../AdminShell";
 import ContractorLinks, { type ContractorRow } from "./ContractorLinks";
 import TelegramTools from "./TelegramTools";
 
-export const metadata: Metadata = { title: "Telegram | Contractor Desk" };
+export const metadata: Metadata = { title: "Telegram | Mera Karigar" };
 
 export default function TelegramPage() {
   return (

@@ -21,4 +21,8 @@ create policy "website can insert messages"
   to anon
   with check (true);
 
+-- Newer Supabase projects do not grant table privileges to anon automatically:
+-- allow INSERT only (no SELECT), so the website can add rows but never read them.
+grant insert on table public.contact_messages to anon;
+
 -- No SELECT, UPDATE or DELETE policy: with RLS on, those are refused for anon.

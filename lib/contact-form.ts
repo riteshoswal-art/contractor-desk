@@ -69,18 +69,18 @@ const escapeHtml = (s: string) => s.replace(/[&<>"']/g, (c) => ({ "&": "&amp;", 
 
 export function ownerEmail(values: ContactValues) {
   return {
-    subject: `New message from ${values.name} – Contractor Desk`,
-    text: `New message from the Contractor Desk website.\n\nName: ${values.name}\nEmail: ${values.email}\n\n${values.message}\n`,
-    html: `<p>New message from the Contractor Desk website.</p><p><b>Name:</b> ${escapeHtml(values.name)}<br><b>Email:</b> ${escapeHtml(values.email)}</p><p style="white-space:pre-wrap">${escapeHtml(values.message)}</p>`,
+    subject: `New message from ${values.name} – Mera Karigar`,
+    text: `New message from the Mera Karigar website.\n\nName: ${values.name}\nEmail: ${values.email}\n\n${values.message}\n`,
+    html: `<p>New message from the Mera Karigar website.</p><p><b>Name:</b> ${escapeHtml(values.name)}<br><b>Email:</b> ${escapeHtml(values.email)}</p><p style="white-space:pre-wrap">${escapeHtml(values.message)}</p>`,
   };
 }
 
 export function ackEmail(values: ContactValues) {
   const first = values.name.split(" ")[0];
   return {
-    subject: "We got your message – Contractor Desk",
-    text: `Hi ${first},\n\nThanks for writing to Contractor Desk. We have received your message and will reply within 1–2 working days.\n\nYour message:\n${values.message}\n\nContractor Desk\nhttps://contractor-desk-nu.vercel.app\n`,
-    html: `<p>Hi ${escapeHtml(first)},</p><p>Thanks for writing to <b>Contractor Desk</b>. We have received your message and will reply within 1–2 working days.</p><p style="color:#6b6b6b">Your message:</p><blockquote style="white-space:pre-wrap;border-left:3px solid #F0542D;margin:0;padding-left:12px">${escapeHtml(values.message)}</blockquote><p>Contractor Desk<br><a href="https://contractor-desk-nu.vercel.app">contractor-desk-nu.vercel.app</a></p>`,
+    subject: "We got your message – Mera Karigar",
+    text: `Hi ${first},\n\nThanks for writing to Mera Karigar. We have received your message and will reply within 1–2 working days.\n\nYour message:\n${values.message}\n\nMera Karigar\nhttps://contractor-desk-nu.vercel.app\n`,
+    html: `<p>Hi ${escapeHtml(first)},</p><p>Thanks for writing to <b>Mera Karigar</b>. We have received your message and will reply within 1–2 working days.</p><p style="color:#6b6b6b">Your message:</p><blockquote style="white-space:pre-wrap;border-left:3px solid #F0542D;margin:0;padding-left:12px">${escapeHtml(values.message)}</blockquote><p>Mera Karigar<br><a href="https://contractor-desk-nu.vercel.app">contractor-desk-nu.vercel.app</a></p>`,
   };
 }
 
@@ -92,7 +92,7 @@ export function gmailMailer(env: ContactEnv): Mailer {
 
 // Sends both emails. Each is tried on its own, so one failing never blocks the other.
 export async function sendContactEmails(env: ContactEnv, values: ContactValues, mailer: Mailer): Promise<{ owner: boolean; ack: boolean }> {
-  const from = `Contractor Desk <${env.gmailUser}>`;
+  const from = `Mera Karigar <${env.gmailUser}>`;
   const [owner, ack] = await Promise.allSettled([
     mailer.sendMail({ from, to: env.notifyTo, replyTo: values.email, ...ownerEmail(values) }),
     mailer.sendMail({ from, to: values.email, ...ackEmail(values) }),

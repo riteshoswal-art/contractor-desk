@@ -15,7 +15,7 @@ import { REVIEW_TABLE, ratingText, summariesByContractor, type Review } from "@/
 import { loadInvites, loadReviews } from "@/lib/review-store";
 import AdminShell from "../AdminShell";
 
-export const metadata: Metadata = { title: "Jobs and reviews | Contractor Desk" };
+export const metadata: Metadata = { title: "Jobs and reviews | Mera Karigar" };
 
 // Admin only: AdminShell sends anyone who is not logged in to the login page
 // before any of this is read.

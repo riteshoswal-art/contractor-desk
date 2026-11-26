@@ -1,9 +1,10 @@
 import Link from "next/link";
 import { raiseRequestHref } from "@/lib/fixtures";
-import { Logo } from "./ui";
+import { Brand } from "./ui";
 
-// The Concept B top bar: brand on the left, the main areas in the middle
-// (the active one underlined), and an optional slot on the right.
+// The Mera Karigar top bar: brand on the left, the main areas in the middle
+// (the active one underlined), and an optional slot on the right. With
+// `overlay` it sits transparently over the home page photo.
 export type SiteArea = "home" | "builder" | "contractor" | "request" | "operator";
 
 // `short` is shown on phones so all four links fit on one line.
@@ -14,13 +15,12 @@ const LINKS: { area: SiteArea; href: string; label: string; short?: string }[] =
   { area: "operator", href: "/admin", label: "Operator" },
 ];
 
-export default function SiteHeader({ active, children }: { active?: SiteArea; children?: React.ReactNode }) {
+export default function SiteHeader({ active, overlay = false, children }: { active?: SiteArea; overlay?: boolean; children?: React.ReactNode }) {
   return (
-    <header className="cb-topbar">
+    <header className={`cb-topbar${overlay ? " overlay" : ""}`}>
       <div className="cb-topnav">
-        <Link href="/" className="brand">
-          <Logo />
-          <span>Contractor Desk</span>
+        <Link href="/" className="brand" aria-label="Mera Karigar home">
+          <Brand />
         </Link>
         <nav aria-label="Main" className="cb-nav">
           {LINKS.map((l) => (

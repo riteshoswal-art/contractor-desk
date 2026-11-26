@@ -3,38 +3,46 @@
    Tokens are global; components live in the components layer so Tailwind
    utilities can still adjust a single element. Do not edit by hand without
    checking the reference screens in ui-demos/. */
+/* Mera Karigar design language (Nov 2026): warm cream surfaces, warm near-black
+   ink, a bronze accent and Montserrat, with large light + semibold headlines.
+   The tokens below restyle every page; the "Mera Karigar" layer at the end of
+   this file adds the header, buttons and home page pieces. */
 :root {
-  --font-body: var(--font-inter), -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
-  --font-display: var(--font-inter-tight), var(--font-inter), -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+  --font-body: var(--font-montserrat), -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+  --font-display: var(--font-montserrat), -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
   --font-deva: var(--font-noto-deva), "Nirmala UI", sans-serif;
   --display-weight: 600;
 
-  --bg: #ffffff;
+  --bg: #f8f5f0;
   --surface: #ffffff;
-  --surface-2: #f5f5f3;
+  --surface-2: #f2ede5;
   --input-bg: #ffffff;
-  --ink: #0e0e0e;
-  --muted: #6b6b6b;
-  --line: #ececea;
-  --line-strong: #dcdcd8;
-  --primary: #0e0e0e;
+  --ink: #1f1b16;
+  --muted: #7a7268;
+  --line: #ebe4d9;
+  --line-strong: #ddd3c4;
+  --primary: #1f1b16;
   --primary-ink: #ffffff;
-  --accent: #f0542d;
-  --ring: rgba(240, 84, 45, 0.16);
-  --focus: #f0542d;
+  --accent: #a87b4f;
+  --accent-soft: #f4ebdf;
+  --gold-1: #e6cdac;
+  --gold-2: #bf9468;
+  --ring: rgba(168, 123, 79, 0.18);
+  --focus: #a87b4f;
 
-  --ok-bg: #e8f5ec; --ok-ink: #1d6b3a;
-  --warn-bg: #fff1e6; --warn-ink: #9a4410;
-  --info-bg: #f3f3f1; --info-ink: #2b2b2b;
-  --err-ink: #c62a1d;
-  --star: #f0542d; --star-bg: #fff1ec;
+  --ok-bg: #e9f3ea; --ok-ink: #2d6a3e;
+  --warn-bg: #f8ecdd; --warn-ink: #8a5422;
+  --info-bg: #f2ede5; --info-ink: #3a332b;
+  --err-ink: #b3261e;
+  --star: #bf9468; --star-bg: #f8efe3;
 
   --radius-xl: 28px; --radius-lg: 20px; --radius-md: 12px;
-  --shadow: none;
-  --shadow-lg: 0 18px 40px -18px rgba(0,0,0,.25);
-  --map-bg: #f6f6f4; --map-road: #e3e3df; --map-river: #e7ecef;
+  --shadow: 0 1px 2px rgba(60, 42, 20, 0.04);
+  --shadow-lg: 0 24px 48px -24px rgba(60, 42, 20, 0.35);
+  --map-bg: #f3eee6; --map-road: #e4dccf; --map-river: #e3e9ea;
   --logo-ink: #ffffff;
 }
+body { background: var(--bg); color: var(--ink); font-family: var(--font-body); }
 
 @layer components {
 :lang(hi), :lang(mr) { font-family: var(--font-deva), var(--font-body); line-height: 1.6; }
@@ -220,7 +228,7 @@
   .card, .input, .select, .textarea, .chip { border-color: var(--ink); }
 }
 
-/* Contractor Desk UI demos: components used by every concept. The identity
+/* Mera Karigar UI demos: components used by every concept. The identity
    (colours, type, radii, shadows) comes from each concept's tokens. */
 
 .grow { flex: 1; min-width: 0; }
@@ -339,7 +347,7 @@
 .ed-hero .h-display { font-size: clamp(2.3rem, 5.6vw, 4.2rem); letter-spacing: -0.035em; }
 .ed-hero .lead { max-width: 600px; }
 .kicker { display: inline-flex; align-items: center; gap: 8px; font-size: 0.85rem; font-weight: 600; }
-.kicker .dot { width: 18px; height: 18px; border-radius: 50%; background: var(--accent); box-shadow: inset 0 0 0 5px #ffd9cc; }
+.kicker .dot { width: 18px; height: 18px; border-radius: 50%; background: var(--accent); box-shadow: inset 0 0 0 5px var(--accent-soft); }
 .ink-chip { display: inline-grid; place-items: center; vertical-align: middle; width: 1.4em; height: 0.95em; border-radius: 999px; background: var(--ink); color: #fff; transform: translateY(-0.06em); }
 .ink-chip svg { width: 0.55em; height: 0.55em; }
 
@@ -356,7 +364,7 @@
 @media (max-width: 900px) { .ed-split { grid-template-columns: minmax(0, 1fr); } }
 .kicker-line { font-size: 0.85rem; font-weight: 600; color: var(--accent); }
 .kicker-line::before { content: "\2013  "; }
-.kicker-line.light { color: #ff8a6b; }
+.kicker-line.light { color: var(--gold-1); }
 .h-display-sm { font-size: clamp(1.8rem, 3.6vw, 2.6rem); }
 .step-card { background: var(--surface-2); border: 0; display: grid; gap: 10px; padding: 22px; }
 .step-card .step-n { color: var(--accent); font-size: 0.8rem; }
@@ -374,8 +382,8 @@
 .cmp-head, .cmp-row { display: grid; grid-template-columns: 1.1fr 1fr 1.3fr 1.3fr 170px; gap: 16px; align-items: start; padding: 16px 20px; }
 .cmp-head { background: var(--surface-2); font-size: 0.75rem; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: .04em; padding-top: 10px; padding-bottom: 10px; }
 .cmp-row { border-top: 1px solid var(--line); transition: background-color 160ms ease; }
-.cmp-row:hover { background: #fcfcfb; }
-.cmp-row.is-selected { box-shadow: inset 3px 0 0 var(--accent); border-color: var(--line); background: #fffaf7; }
+.cmp-row:hover { background: #fcfaf6; }
+.cmp-row.is-selected { box-shadow: inset 3px 0 0 var(--accent); border-color: var(--line); background: #fbf6ef; }
 .cmp-act { display: flex; justify-content: flex-end; }
 .cmp-act .btn { white-space: normal; text-align: center; line-height: 1.2; min-height: 40px; padding: 8px 14px; }
 .quote-inline { margin: 8px 0 0; color: var(--ink); font-style: italic; }

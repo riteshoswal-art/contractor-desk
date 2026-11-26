@@ -7,7 +7,7 @@ import { computeTypeStats } from "@/lib/stats";
 import AdminShell from "../AdminShell";
 import StatsView from "./StatsView";
 
-export const metadata: Metadata = { title: "Dashboard | Contractor Desk" };
+export const metadata: Metadata = { title: "Dashboard | Mera Karigar" };
 
 export default function DashboardPage() {
   return (

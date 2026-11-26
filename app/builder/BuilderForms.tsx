@@ -103,7 +103,7 @@ export function RegisterBuilderForm() {
       </label>
       <label className="check">
         <input type="checkbox" checked={v.consent} onChange={(e) => setV({ ...v, consent: e.target.checked })} />
-        <span>I agree that Contractor Desk may store my name, company and mobile number, and share my name and number with the contractor I choose for a job.</span>
+        <span>I agree that Mera Karigar may store my name, company and mobile number, and share my name and number with the contractor I choose for a job.</span>
       </label>
       <FieldError id="consent" text={errors.consent} />
       {problem && (
@@ -331,7 +331,7 @@ export function BuilderTicketForm({ today, connected, initial }: { today: string
         {!connected && (
           <p className="notice notice-warn" style={{ margin: 0 }}>
             <Icon name="info" size={16} />
-            <span>Your Telegram is not connected yet (step 2). If you raise a ticket now, the quotations go to the Contractor Desk team instead of you.</span>
+            <span>Your Telegram is not connected yet (step 2). If you raise a ticket now, the quotations go to the Mera Karigar team instead of you.</span>
           </p>
         )}
         {problem && (

@@ -283,7 +283,7 @@ test("the summary goes out after 10 minutes even if someone has not answered, an
   const later = new Date(Date.now() + SUMMARY_AFTER_MS + 1000);
   assert.deepEqual(await sendDueSummaries(sheet, { ...env, now: later }), [requestId]);
   const m = t.last(FOUNDER_CHAT);
-  assert.match(m.text, /Sent to the Contractor Desk team: the builder has not connected Telegram/);
+  assert.match(m.text, /Sent to the Mera Karigar team: the builder has not connected Telegram/);
   assert.match(m.text, /No answer yet: 1/);
   assert.equal(t.messages().length, 1);
 });

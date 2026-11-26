@@ -5,7 +5,7 @@ import RequestForm from "./RequestForm";
 import SiteHeader from "../SiteHeader";
 
 export const metadata: Metadata = {
-  title: "Contractor request | Contractor Desk",
+  title: "Contractor request | Mera Karigar",
 };
 
 // The steps, summary and language choice are all inside RequestForm so that

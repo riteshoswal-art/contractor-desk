@@ -12,7 +12,7 @@ import AdminShell from "../../../../AdminShell";
 import { BackLink, Notice } from "../../detail-ui";
 import OutcomeForm from "./OutcomeForm";
 
-export const metadata: Metadata = { title: "Record outcome | Contractor Desk" };
+export const metadata: Metadata = { title: "Record outcome | Mera Karigar" };
 
 type Props = PageProps<"/admin/requests/[id]/outcome/[contractorId]">;
 

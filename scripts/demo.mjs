@@ -1,4 +1,4 @@
-// npm run demo: starts Contractor Desk in LIVE DEMO (fixture) mode on port 3100.
+// npm run demo: starts Mera Karigar in LIVE DEMO (fixture) mode on port 3100.
 //
 //   - In-memory spreadsheet: made-up starter records plus whoever registers
 //     during the demo. Admin pages show FIXTURE MODE and TEST banners. Your
@@ -22,7 +22,7 @@ const addresses = Object.values(os.networkInterfaces())
   .map((i) => i.address);
 const lan = addresses.map((a) => `http://${a}:${port}`);
 
-console.log("Contractor Desk: LIVE DEMO (fixture mode). Made-up and demo data only; your Google Sheet is not used.");
+console.log("Mera Karigar: LIVE DEMO (fixture mode). Made-up and demo data only; your Google Sheet is not used.");
 console.log(`  On this laptop:          http://localhost:${port}/admin/builder`);
 for (const url of lan) console.log(`  Phones on the same Wi-Fi: ${url}/register   (admin: ${url}/admin/builder)`);
 console.log(`  Demo data is saved in:  ${file}`);

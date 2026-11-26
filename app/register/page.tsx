@@ -4,7 +4,7 @@ import SiteHeader from "../SiteHeader";
 import { Icon, Stage } from "../ui";
 
 export const metadata: Metadata = {
-  title: "Contractor registration | Contractor Desk",
+  title: "Contractor registration | Mera Karigar",
 };
 
 // Concept B device stage: a short explanation on the left (English; on a phone

@@ -1,18 +1,16 @@
 import type { Metadata } from "next";
-import { Inter, Inter_Tight, Noto_Sans_Devanagari } from "next/font/google";
+import { Montserrat, Noto_Sans_Devanagari } from "next/font/google";
 import "./globals.css";
 import "./concept-b.css";
+import "./mera-karigar.css";
 
-// Concept B type: Inter for text, Inter Tight for headings, Noto Sans
-// Devanagari for Hindi and Marathi.
-const inter = Inter({
-  variable: "--font-inter",
+// Mera Karigar type: Montserrat for text and headings (light and semibold
+// weights side by side in the big headlines), Noto Sans Devanagari for Hindi
+// and Marathi.
+const montserrat = Montserrat({
+  variable: "--font-montserrat",
   subsets: ["latin"],
-});
-
-const interTight = Inter_Tight({
-  variable: "--font-inter-tight",
-  subsets: ["latin"],
+  weight: ["300", "400", "500", "600", "700"],
 });
 
 const notoDeva = Noto_Sans_Devanagari({
@@ -22,14 +20,14 @@ const notoDeva = Noto_Sans_Devanagari({
 });
 
 export const metadata: Metadata = {
-  title: "Contractor Desk",
-  description: "Find available contractors for residential projects in Pune.",
+  title: "Mera Karigar",
+  description: "When a contractor drops out, find an available karigar in Pune by trade, area and start date, and compare one quote from each.",
   robots: { index: false, follow: false },
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
-    <html lang="en" className={`${inter.variable} ${interTight.variable} ${notoDeva.variable} h-full antialiased`}>
+    <html lang="en" className={`${montserrat.variable} ${notoDeva.variable} h-full antialiased`}>
       <body className="min-h-full flex flex-col">{children}</body>
     </html>
   );
