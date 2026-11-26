@@ -9,7 +9,7 @@ import HomeSearch from "./HomeSearch";
 import SiteFooter from "./SiteFooter";
 import SiteHeader from "./SiteHeader";
 import { Icon, type IconName } from "./ui";
-import heroPhoto from "../public/images/hero.jpg";
+import heroPhoto from "../public/images/hero-bw.jpg";
 import karigarsPhoto from "../public/images/karigars-work.jpg";
 
 // The Mera Karigar home page: photo hero with the search pill, a trust strip,
